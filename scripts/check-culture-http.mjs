@@ -60,6 +60,8 @@ async function runChecks() {
     )
   }
   const home = await check("/")
+  assert.match(home.headers.get("cache-control"), /s-maxage=30/)
+  assert.equal(home.headers.get("set-cookie"), null)
   assert.match(await home.text(), /Agenda cultural de Mataró/)
   const manifest = await (await check("/manifest.webmanifest")).json()
   assert.equal(manifest.start_url, "/")
@@ -70,7 +72,17 @@ async function runChecks() {
   assert.match(worker.headers.get("cache-control"), /no-store/)
   await check("/offline.html")
   await check("/offline.js")
-  await check("/api/culture?from=invalid", 400)
+  const invalid = await check("/api/culture?from=invalid", 400)
+  assert.equal(invalid.headers.get("cache-control"), "no-store")
+  const catalog = await check("/api/culture", [200, 503])
+  assert.equal(catalog.headers.get("set-cookie"), null)
+  if (catalog.ok) {
+    assert.match(catalog.headers.get("cache-control"), /s-maxage=15/)
+    assert.equal(catalog.headers.get("x-culture-public"), "1")
+  } else {
+    assert.equal(catalog.headers.get("cache-control"), "no-store")
+    assert.equal(catalog.headers.get("x-culture-public"), null)
+  }
   // Next.js can send HTTP 200 after a streaming shell; its not-found content must
   // still carry noindex so invalid event URLs are never indexed as real events.
   const missingEvent = await (
@@ -81,7 +93,7 @@ async function runChecks() {
   await check("/api/culture/events/invalid-id/calendar", 404)
   await check("/opengraph-image")
   console.log(
-    `${checks} production HTTP checks passed (pages, manifest, icons, offline assets, metadata and invalid inputs).`
+    `${checks} production HTTP checks passed (pages, cache headers, manifest, icons, offline assets, metadata and invalid inputs).`
   )
 }
 

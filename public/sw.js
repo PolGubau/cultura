@@ -53,7 +53,9 @@ async function publicData(request) {
       headers.set("X-Culture-Offline", "1")
       return new Response(await cached.arrayBuffer(), { headers, status: 200 })
     }
-  } catch { /* Storage is optional; the application still works online. */ }
+  } catch {
+    /* Storage is optional; the application still works online. */
+  }
   return response || Response.error()
 }
 

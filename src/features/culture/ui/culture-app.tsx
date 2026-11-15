@@ -62,8 +62,10 @@ function CultureContent({
   const [selectedDay, setSelectedDay] = useState("")
   const [visibleCount, setVisibleCount] = useState(60)
   useEffect(() => {
+    // ISR HTML may have been generated earlier; correct its clock after hydration.
+    const initialTick = setTimeout(() => setNow(new Date()), 0)
     const timer = setInterval(() => setNow(new Date()), 30_000)
-    return () => clearInterval(timer)
+    return () => { clearTimeout(initialTick); clearInterval(timer) }
   }, [])
   const today = dayKey(now, data?.city.timezone)
   const festival = resolveFestival(

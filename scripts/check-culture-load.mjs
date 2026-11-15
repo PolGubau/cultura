@@ -95,7 +95,11 @@ try {
   upstream.fail(true)
   const outageCalls = upstream.calls()
   await request(coldPath)
-  assert.equal(upstream.calls(), outageCalls, "Warm snapshots must survive an upstream outage")
+  assert.equal(
+    upstream.calls(),
+    outageCalls,
+    "Warm snapshots must survive an upstream outage"
+  )
   const failed = await request("/api/culture?from=2032-01-01", 503)
   assert.equal(failed.response.headers.get("cache-control"), "no-store")
   assert.equal(failed.response.headers.get("x-culture-public"), null)

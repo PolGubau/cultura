@@ -72,7 +72,7 @@ El service worker solo se registra en producción, bajo HTTPS o localhost. Compr
 
 - `node --test tests/*.test.*`: reglas de fechas/DST, modo fiesta, búsqueda, cancelaciones, validación, ICS, concurrencia, refresco e aislamiento de caché del service worker.
 - `pnpm typecheck`, `pnpm lint`, `pnpm build`.
-- Después del build, `node scripts/check-culture-http.mjs --start` inicia un servidor local en el puerto 3107, ejecuta 27 comprobaciones HTTP y lo cierra. Verifica rutas, manifiesto, iconos y entradas inválidas; no sustituye una prueba interactiva en navegador.
+- Después del build, `node scripts/check-culture-http.mjs --start` inicia un servidor local en el puerto 3107, ejecuta 28 comprobaciones HTTP y lo cierra. Verifica rutas, cabeceras de caché, manifiesto, iconos y entradas inválidas; no sustituye una prueba interactiva en navegador.
 - `supabase/tests/culture-rls.sql`: comprobación transaccional de permisos con dos ciudades; ejecutar solo en una base de desarrollo migrada. Termina en rollback. No se ha podido ejecutar aquí al no haber PostgreSQL/Docker ni un proyecto Supabase autorizado.
 - `node scripts/check-culture-load.mjs`: build aislado en `.next-culture-load` y carga local acotada con 1.000 actos sintéticos. Comprueba consultas reales del repositorio contra un servidor HTTP simulado, no PostgreSQL/RLS. No modifica `.next` ni conecta Supabase. Detalles y límites en [CULTURE-PERFORMANCE.md](./CULTURE-PERFORMANCE.md).
 
