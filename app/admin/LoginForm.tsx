@@ -1,18 +1,27 @@
-'use client'
+"use client"
 
-import { useActionState } from 'react'
-import { SignInIcon, WarningIcon } from '@phosphor-icons/react'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Button } from '@/components/ui/button'
-import { login } from './actions'
-import { Logo } from '@/components/logo'
+import { useActionState } from "react"
+import { SignInIcon, WarningIcon } from "@phosphor-icons/react"
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Button } from "@/components/ui/button"
+import { login } from "./actions"
+import { Logo } from "@/components/logo"
 
 type State = { error?: string } | null
 
 export function LoginForm() {
-  const [state, action, isPending] = useActionState<State, FormData>(login, null)
+  const [state, action, isPending] = useActionState<State, FormData>(
+    login,
+    null
+  )
 
   return (
     <div className="flex min-h-[80vh] items-center justify-center">
@@ -22,13 +31,17 @@ export function LoginForm() {
             <Logo />
           </div>
           <h1 className="text-xl font-semibold">Panel d&apos;administració</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Les Santes · Mataró</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Agenda cultural · Mataró
+          </p>
         </div>
 
         <Card>
           <CardHeader>
             <CardTitle>Accedir</CardTitle>
-            <CardDescription>Introdueix les teves credencials d&apos;administrador</CardDescription>
+            <CardDescription>
+              Introdueix les teves credencials d&apos;administrador
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <form action={action} className="flex flex-col gap-4">
@@ -58,12 +71,16 @@ export function LoginForm() {
               {state?.error && (
                 <p
                   role="alert"
-                  className="flex items-start gap-2 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive animate-in fade-in slide-in-from-top-1 duration-200"
+                  className="flex animate-in items-start gap-2 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive duration-200 fade-in slide-in-from-top-1"
                 >
-                  <WarningIcon className="mt-0.5 size-4 shrink-0" weight="fill" aria-hidden />
+                  <WarningIcon
+                    className="mt-0.5 size-4 shrink-0"
+                    weight="fill"
+                    aria-hidden
+                  />
                   <span>
-                    {state.error === 'Invalid login credentials'
-                      ? 'Credencials incorrectes'
+                    {state.error === "Invalid login credentials"
+                      ? "Credencials incorrectes"
                       : state.error}
                   </span>
                 </p>
@@ -75,11 +92,11 @@ export function LoginForm() {
                 disabled={isPending}
               >
                 <SignInIcon
-                  className={`size-4 transition-transform duration-200 ${isPending ? 'animate-pulse' : ''}`}
+                  className={`size-4 transition-transform duration-200 ${isPending ? "animate-pulse" : ""}`}
                   weight="bold"
                   aria-hidden
                 />
-                {isPending ? 'Accedint…' : 'Accedir'}
+                {isPending ? "Accedint…" : "Accedir"}
               </Button>
             </form>
           </CardContent>

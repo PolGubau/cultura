@@ -8,7 +8,7 @@ export const APP_COUNTRY = "ES";
 export const APP_START_DATE = "2026-07-17";
 export const APP_END_DATE = "2026-07-29";
 
-export const SITE_URL = "https://lessantes.polgubau.com";
+export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://lessantes.polgubau.com";
 export const API_URL = "https://api.lessantes.polgubau.com";
 export const OFFICIAL_MATARO_URL = "https://www.mataro.cat";
 

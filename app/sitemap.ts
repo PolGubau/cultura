@@ -9,13 +9,36 @@ const lastModified = new Date()
 
 /** Historic posters surfaced in the home page marquee — also indexed in Google Images. */
 const POSTER_YEARS = [
-  "1892", "1920", "1934", "1950", "1960", "1970", "1980", "1985", "1990", "2000",
-  "2010", "2015", "2018", "2020", "2022", "2023", "2024", "2025", "2026",
+  "1892",
+  "1920",
+  "1934",
+  "1950",
+  "1960",
+  "1970",
+  "1980",
+  "1985",
+  "1990",
+  "2000",
+  "2010",
+  "2015",
+  "2018",
+  "2020",
+  "2022",
+  "2023",
+  "2024",
+  "2025",
+  "2026",
 ] as const
 
 /** App screenshots shown on the home page — surface them in image search too. */
 const SCREENSHOTS = [
-  "ara", "agenda", "agenda-favs", "mapa", "recursos", "cartells", "postals",
+  "ara",
+  "agenda",
+  "agenda-favs",
+  "mapa",
+  "recursos",
+  "cartells",
+  "postals",
 ] as const
 
 const homeImages: string[] = [
@@ -33,6 +56,25 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "weekly",
       priority: 1,
       alternates: { languages: { "ca-ES": `${SITE_URL}/` } },
+      images: [`${SITE_URL}/opengraph-image`],
+    },
+    {
+      url: `${SITE_URL}/mapa`,
+      lastModified,
+      changeFrequency: "daily",
+      priority: 0.7,
+    },
+    {
+      url: `${SITE_URL}/legal/privacitat`,
+      lastModified,
+      changeFrequency: "yearly",
+      priority: 0.3,
+    },
+    {
+      url: `${SITE_URL}/santes-2026`,
+      lastModified,
+      changeFrequency: "yearly",
+      priority: 0.4,
       images: homeImages,
     },
     {

@@ -1,50 +1,64 @@
-import { createClient } from '@/lib/supabase/server'
-import { Badge } from '@/components/ui/badge'
-import { Separator } from '@/components/ui/separator'
-import { AdminNav, AdminSignOutButton } from './AdminNav'
+import Link from "next/link"
+import { citySession } from "@/src/features/culture/server/auth"
+import { hasDatabase } from "@/src/features/culture/server/config"
+import "@/src/features/culture/ui/culture.css"
+import { AdminNav, AdminSignOutButton } from "./AdminNav"
+import { LoginForm } from "./LoginForm"
 
-export const metadata = { title: 'Admin — Les Santes' }
+export const dynamic = "force-dynamic"
 
-const FESTIVAL_ID = process.env.FESTIVAL_ID ?? 'les-santes-2026'
+export const metadata = {
+  title: "Administració · Mataró Cultura",
+  robots: { index: false, follow: false },
+}
 
 export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
+  if (!hasDatabase())
+    return (
+      <main id="main-content" className="culture-admin">
+        <h1>Configuració pendent</h1>
+        <p>
+          Configura Supabase i aplica les migracions indicades a
+          docs/CULTURE.md.
+        </p>
+        <Link href="/">Tornar a l’agenda</Link>
+      </main>
+    )
+  const session = await citySession()
+  if (!session)
+    return (
+      <main id="main-content">
+        <LoginForm />
+      </main>
+    )
+  if (!["owner", "editor"].includes(session.role ?? ""))
+    return (
+      <main id="main-content" className="culture-admin">
+        <h1>Sense permisos d’edició</h1>
+        <p>
+          El teu compte no té permisos per gestionar aquesta ciutat. Demana
+          accés a la persona responsable.
+        </p>
+        <AdminSignOutButton />
+      </main>
+    )
   return (
-    <div className="min-h-screen bg-muted/30">
-      {user && (
-        <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
-          <div className="mx-auto flex max-w-6xl items-center gap-2 px-3 py-2.5 sm:gap-6 sm:px-6 sm:py-3">
-            <div className="flex items-center gap-2 sm:gap-3">
-              <span className="text-sm font-semibold tracking-tight">
-                Les Santes
-              </span>
-              <Badge variant="secondary" className="hidden font-mono text-[10px] sm:inline-flex">
-                {FESTIVAL_ID}
-              </Badge>
-            </div>
-
-            <Separator orientation="vertical" className="hidden h-5 sm:block" />
-
-            <AdminNav />
-
-            <div className="ml-auto flex items-center gap-1.5 sm:gap-3">
-              <span className="hidden max-w-[18ch] truncate text-xs text-muted-foreground md:inline">
-                {user.email}
-              </span>
-              <AdminSignOutButton />
-            </div>
+    <div className="culture-admin">
+      <header>
+        <div className="culture-row culture-between">
+          <Link href="/">Mataró · Cultura</Link>
+          <div className="culture-row">
+            <span>{session.user.email}</span>
+            <AdminSignOutButton />
           </div>
-        </header>
-      )}
-      <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">{children}</main>
+        </div>
+        <AdminNav />
+      </header>
+      <main id="main-content">{children}</main>
     </div>
   )
 }

@@ -1,34 +1,16 @@
-import { createAdminClient } from '@/lib/supabase/server'
-import { FeedbackClient, type Feedback } from './FeedbackClient'
-
-const FESTIVAL_ID = process.env.FESTIVAL_ID ?? 'les-santes-2026'
+import Link from "next/link"
+import { requireEditor } from "@/src/features/culture/server/auth"
 
 export default async function FeedbackPage() {
-  const admin = await createAdminClient()
-
-  const { data: feedback, error } = await admin
-    .from('feedback')
-    .select('*')
-    .eq('festival_id', FESTIVAL_ID)
-    .order('created_at', { ascending: false })
-
-  if (error) {
-    return (
-      <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-6 text-sm text-destructive">
-        Error carregant feedback: {error.message}
-      </div>
-    )
-  }
-
+  await requireEditor()
   return (
-    <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold tracking-tight">Feedback</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Opinions i errors reportats pels usuaris de {FESTIVAL_ID}
-        </p>
-      </div>
-      <FeedbackClient feedback={(feedback as unknown as Feedback[]) ?? []} />
-    </div>
+    <section className="culture-stack">
+      <h1>Feedback de l’app antiga</h1>
+      <p>
+        El panell cultural no accedeix als missatges privats de 2026. El
+        contacte d’aquesta versió està disponible a la pàgina de suport.
+      </p>
+      <Link href="/admin/events">Gestionar l’agenda cultural</Link>
+    </section>
   )
 }

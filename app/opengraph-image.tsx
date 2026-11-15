@@ -1,24 +1,30 @@
 import { ImageResponse } from "next/og"
-import { APP_NAME, APP_YEAR, SITE_URL } from "@/lib/constants"
 
 export const runtime = "edge"
-export const alt = `${APP_NAME} ${APP_YEAR} · App de la Festa Major de Mataró`
+export const alt = "Mataró Cultura · La cultura de la ciutat, tot l’any"
 export const size = { width: 1200, height: 630 }
 export const contentType = "image/png"
 
-export default async function Image() {
-  const res = await fetch(new URL(`${SITE_URL}/thumbnail.png`))
-  const data = await res.arrayBuffer()
-  const src = `data:image/png;base64,${Buffer.from(data).toString("base64")}`
-
+export default function Image() {
   return new ImageResponse(
-    (
-      <div style={{ width: "100%", height: "100%", display: "flex" }}>
-        {/* next/image is not supported inside ImageResponse (Satori). */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={src} alt="" role="presentation" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+    <div
+      style={{
+        width: "100%",
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+        padding: 80,
+        background: "#9f1239",
+        color: "white",
+      }}
+    >
+      <div style={{ fontSize: 30, marginBottom: 36 }}>AGENDA CULTURAL</div>
+      <div style={{ fontSize: 94, fontWeight: 700 }}>Mataró · Cultura</div>
+      <div style={{ fontSize: 38, marginTop: 36 }}>
+        La cultura de la ciutat, tot l’any.
       </div>
-    ),
-    { ...size },
+    </div>,
+    { ...size }
   )
 }

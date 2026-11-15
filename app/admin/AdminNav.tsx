@@ -1,24 +1,23 @@
-'use client'
+"use client"
 
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import Link from "next/link"
+import { usePathname } from "next/navigation"
 import {
   CalendarIcon,
-  ChartBarIcon,
-  ChatCircleTextIcon,
   type Icon as PhosphorIcon,
   MegaphoneIcon,
   SignOutIcon,
-} from '@phosphor-icons/react'
-import { logout } from './actions'
+} from "@phosphor-icons/react"
+import { logout } from "./actions"
 
 type NavLink = { href: string; label: string; Icon: PhosphorIcon }
 
 const NAV_LINKS: NavLink[] = [
-  { href: '/admin/events', label: 'Esdeveniments', Icon: CalendarIcon },
-  { href: '/admin/announcements', label: 'Avisos', Icon: MegaphoneIcon },
-  { href: '/admin/feedback', label: 'Feedback', Icon: ChatCircleTextIcon },
-  { href: '/admin/analytics', label: 'Analítiques', Icon: ChartBarIcon },
+  { href: "/admin/events", label: "Esdeveniments", Icon: CalendarIcon },
+  { href: "/admin/announcements", label: "Avisos", Icon: MegaphoneIcon },
+  { href: "/admin/festivals", label: "Festes", Icon: CalendarIcon },
+  { href: "/admin/places", label: "Llocs", Icon: CalendarIcon },
+  { href: "/admin/categories", label: "Categories", Icon: CalendarIcon },
 ]
 
 export function AdminNav() {
@@ -32,21 +31,21 @@ export function AdminNav() {
           <Link
             key={href}
             href={href}
-            aria-current={active ? 'page' : undefined}
+            aria-current={active ? "page" : undefined}
             aria-label={label}
             className={[
-              'inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium transition-all duration-150 sm:px-3',
+              "inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium transition-all duration-150 sm:px-3",
               active
-                ? 'bg-foreground/5 text-foreground shadow-inner'
-                : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-            ].join(' ')}
+                ? "bg-foreground/5 text-foreground shadow-inner"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground",
+            ].join(" ")}
           >
             <Icon
               className="size-4"
-              weight={active ? 'fill' : 'regular'}
+              weight={active ? "fill" : "regular"}
               aria-hidden
             />
-            <span className="hidden sm:inline">{label}</span>
+            <span>{label}</span>
           </Link>
         )
       })}

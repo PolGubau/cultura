@@ -1,70 +1,16 @@
-import { createAdminClient } from '@/lib/supabase/server'
-import { AnalyticsClient } from './AnalyticsClient'
-import { type AnalyticsSummary, RANGES, type RangeKey } from './types'
+import Link from "next/link"
+import { requireEditor } from "@/src/features/culture/server/auth"
 
-const FESTIVAL_ID = process.env.FESTIVAL_ID ?? 'les-santes-2026'
-
-interface PageProps {
-  searchParams: Promise<{ range?: string }>
-}
-
-function resolveRange(raw: string | undefined): RangeKey {
-  const found = RANGES.find((r) => r.key === raw)
-  return (found?.key ?? '7d') as RangeKey
-}
-
-function getSince(range: RangeKey): Date {
-  const ms = RANGES.find((r) => r.key === range)!.ms
-  return new Date(Date.now() - ms)
-}
-
-export default async function AnalyticsPage({ searchParams }: PageProps) {
-  const { range: rangeParam } = await searchParams
-  const range = resolveRange(rangeParam)
-  const since = getSince(range)
-
-  const admin = await createAdminClient()
-  const { data, error } = await admin.rpc('get_analytics_summary', {
-    p_festival_id: FESTIVAL_ID,
-    p_since: since.toISOString(),
-  })
-
-  if (error) {
-    return (
-      <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-6 text-sm text-destructive">
-        Error carregant analítiques: {error.message}
-      </div>
-    )
-  }
-
-  const summary = (data ?? {
-    totals: {
-      total_events: 0,
-      unique_installs: 0,
-      unique_sessions: 0,
-      app_opens: 0,
-      event_views: 0,
-      favorites_added: 0,
-      favorites_removed: 0,
-      onboarding_started: 0,
-      onboarding_completed: 0,
-    },
-    app_opens_by_day: [],
-    nudges: [],
-    top_events: [],
-    top_favorites: [],
-    recent: [],
-  }) as AnalyticsSummary
-
+export default async function AnalyticsPage() {
+  await requireEditor()
   return (
-    <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold tracking-tight">Analítiques</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Comportament d&apos;ús de {FESTIVAL_ID}
-        </p>
-      </div>
-      <AnalyticsClient summary={summary} range={range} />
-    </div>
+    <section className="culture-stack">
+      <h1>Analítiques de l’app antiga</h1>
+      <p>
+        El panell cultural no accedeix a les dades privades de l’app de 2026.
+        Aquesta versió no recull analítica d’ús.
+      </p>
+      <Link href="/admin/events">Gestionar l’agenda cultural</Link>
+    </section>
   )
 }
