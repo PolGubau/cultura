@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { requireEditor } from "../server/auth"
+import { citySession } from "../server/auth"
 import { loadCatalog } from "../server/repository"
 import { validDay } from "../domain/time"
 import { EventEditor } from "./event-editor"
@@ -34,7 +34,10 @@ export async function AdminWorkspace({
   section: Section
   searchParams: Params
 }) {
-  await requireEditor()
+  const session = await citySession()
+  // The layout renders setup/login/denied states. Child routes must also fail
+  // closed, without logging normal unauthenticated visits as server failures.
+  if (!session || !["owner", "editor"].includes(session.role ?? "")) return null
   const params = await searchParams
   const from = params.from && validDay(params.from) ? params.from : undefined
   const result = await loadCatalog(from, true)
@@ -111,7 +114,8 @@ export async function AdminWorkspace({
           {!items.length && <p>Encara no hi ha registres en aquest període.</p>}
           {data.hasMore && section === "events" && (
             <p>
-              Hi ha més de 1.000 actes. Tria una data més recent per continuar.
+              S’ha arribat al límit de 1.000 actes. Tria una data més recent per
+              continuar.
             </p>
           )}
         </div>

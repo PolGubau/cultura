@@ -1,11 +1,13 @@
 "use server"
 
-import { revalidatePath } from "next/cache"
+import { revalidatePath, updateTag } from "next/cache"
 import { saveEntity, duplicateEvent } from "./writes"
 import { ValidationError } from "../domain/validation"
 import type { ActionResult } from "../domain/types"
+import { PUBLIC_CACHE_TAG } from "./public-cache"
 
 function invalidate() {
+  updateTag(PUBLIC_CACHE_TAG)
   revalidatePath("/", "layout")
 }
 

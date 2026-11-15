@@ -25,23 +25,36 @@ self.addEventListener("activate", (event) => {
 })
 
 async function publicData(request) {
-  const cache = await caches.open(DATA)
+  let response
   try {
-    const response = await fetch(request)
+    response = await fetch(request)
+  } catch {
+    // A stored snapshot can also cover a temporarily unavailable origin.
+  }
+  if (response?.ok) {
     if (response.ok && response.headers.get("X-Culture-Public") === "1") {
-      await cache.put(request, response.clone())
-      const keys = await cache.keys()
-      for (const key of keys.slice(0, Math.max(0, keys.length - 12)))
-        await cache.delete(key)
+      try {
+        const cache = await caches.open(DATA)
+        await cache.put(request, response.clone())
+        const keys = await cache.keys()
+        for (const key of keys.slice(0, Math.max(0, keys.length - 12)))
+          await cache.delete(key)
+      } catch {
+        // Full or unavailable device storage must never hide a good response.
+      }
     }
     return response
-  } catch {
-    const cached = await cache.match(request)
-    if (!cached) return Response.error()
-    const headers = new Headers(cached.headers)
-    headers.set("X-Culture-Offline", "1")
-    return new Response(await cached.arrayBuffer(), { headers, status: 200 })
   }
+  try {
+    const cache = await caches.open(DATA)
+    const cached = await cache.match(request)
+    if (cached) {
+      const headers = new Headers(cached.headers)
+      headers.set("X-Culture-Offline", "1")
+      return new Response(await cached.arrayBuffer(), { headers, status: 200 })
+    }
+  } catch { /* Storage is optional; the application still works online. */ }
+  return response || Response.error()
 }
 
 self.addEventListener("fetch", (event) => {

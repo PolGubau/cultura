@@ -132,6 +132,25 @@ test("cached data is labelled stale after network failure", async () => {
   )
 })
 
+test("a temporary origin failure falls back to a labelled public snapshot", async () => {
+  const app = worker()
+  await app.request("/api/culture")
+  app.setNetwork(async () => Response.json({ error: "Unavailable" }, { status: 503 }))
+  const response = await app.request("/api/culture")
+  assert.equal(response.status, 200)
+  assert.equal(response.headers.get("X-Culture-Offline"), "1")
+  assert.deepEqual(await response.json(), { data: { events: [] } })
+  assert.equal((await app.request("/api/culture?from=2032-01-01")).status, 503)
+})
+
+test("unavailable device storage never hides a successful network response", async () => {
+  const app = worker()
+  app.caches.open = async () => { throw new Error("Storage unavailable") }
+  const response = await app.request("/api/culture")
+  assert.equal(response.status, 200)
+  assert.deepEqual(await response.json(), { data: { events: [] } })
+})
+
 test("offline cache is bounded to twelve public catalogs", async () => {
   const app = worker()
   for (let day = 1; day <= 14; day++)

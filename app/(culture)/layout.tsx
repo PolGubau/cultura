@@ -1,7 +1,8 @@
 import type { Metadata } from "next"
 import "@/src/features/culture/ui/culture.css"
 
-export const dynamic = "force-dynamic"
+// Public HTML is shared. Preferences and favorites are applied only in the client.
+export const revalidate = 30
 
 export const metadata: Metadata = {
   title: {

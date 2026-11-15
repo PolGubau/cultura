@@ -5,6 +5,11 @@ import { loadEventContext } from "@/src/features/culture/server/repository"
 import { EventDetail } from "@/src/features/culture/ui/event-detail"
 
 const load = cache(loadEventContext)
+// Generate details on first visit, then serve the shared ISR page.
+export function generateStaticParams() {
+  return []
+}
+
 export async function generateMetadata({
   params,
 }: {

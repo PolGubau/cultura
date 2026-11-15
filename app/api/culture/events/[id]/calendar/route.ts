@@ -1,5 +1,6 @@
 import { loadEventContext } from "@/src/features/culture/server/repository"
 import { eventCalendar } from "@/src/features/culture/domain/calendar"
+import { PUBLIC_HTTP_CACHE } from "@/src/features/culture/server/public-cache"
 
 export async function GET(
   _request: Request,
@@ -18,7 +19,7 @@ export async function GET(
       headers: {
         "Content-Type": "text/calendar; charset=utf-8",
         "Content-Disposition": `attachment; filename="acte-${result.event.id}.ics"`,
-        "Cache-Control": "no-store",
+        "Cache-Control": PUBLIC_HTTP_CACHE,
       },
     }
   )

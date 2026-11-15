@@ -17,15 +17,18 @@ export default function EventMap({
 }) {
   const container = useRef<HTMLDivElement>(null)
   const mapRef = useRef<MapInstance | null>(null)
+  const libraryRef = useRef<typeof import("maplibre-gl").default | null>(null)
+  const [loadedMap, setLoadedMap] = useState<MapInstance | null>(null)
+  const fitted = useRef(false)
   const [error, setError] = useState("")
   const [location, setLocation] = useState("")
   useEffect(() => {
     let cancelled = false
     let map: MapInstance | undefined
-    const markers: { remove: () => void }[] = []
     import("maplibre-gl")
       .then(({ default: maplibre }) => {
         if (cancelled || !container.current) return
+        libraryRef.current = maplibre
         map = new maplibre.Map({
           container: container.current,
           style: "https://tiles.openfreemap.org/styles/liberty",
@@ -43,45 +46,9 @@ export default function EventMap({
         })
         map.on("load", () => {
           if (!map || cancelled) return
-          const bounds = new maplibre.LngLatBounds()
-          const routes: GeoJSON.Feature<GeoJSON.LineString>[] = []
-          for (const event of events) {
-            const place = catalog.places.find(
-              (item) => item.id === event.place_id
-            )
-            if (!place) continue
-            const point: [number, number] = [place.longitude, place.latitude]
-            bounds.extend(point)
-            const popup = document.createElement("div")
-            const link = document.createElement("a")
-            link.href = `/actes/${event.id}`
-            link.textContent = eventText(event, locale).title
-            link.style.cssText =
-              "color:#111;text-decoration:underline;font-size:16px"
-            popup.append(link)
-            markers.push(
-              new maplibre.Marker({
-                color: event.status === "cancelled" ? "#64748b" : "#9f1239",
-              })
-                .setLngLat(point)
-                .setPopup(new maplibre.Popup().setDOMContent(popup))
-                .addTo(map)
-            )
-            if (event.route)
-              routes.push({
-                type: "Feature",
-                properties: {},
-                geometry: {
-                  type: "LineString",
-                  coordinates: event.route.map((item) => [item.lng, item.lat]),
-                },
-              })
-          }
-          if (!bounds.isEmpty())
-            map.fitBounds(bounds, { padding: 60, maxZoom: 15, animate: false })
           map.addSource("routes", {
             type: "geojson",
-            data: { type: "FeatureCollection", features: routes },
+            data: { type: "FeatureCollection", features: [] },
           })
           map.addLayer({
             id: "routes",
@@ -89,6 +56,8 @@ export default function EventMap({
             type: "line",
             paint: { "line-color": "#9f1239", "line-width": 4 },
           })
+          fitted.current = false
+          setLoadedMap(map)
         })
       })
       .catch(() => {
@@ -99,11 +68,58 @@ export default function EventMap({
       })
     return () => {
       cancelled = true
-      markers.forEach((marker) => marker.remove())
       map?.remove()
       mapRef.current = null
     }
-  }, [catalog.city, catalog.places, events, locale])
+  }, [catalog.city.latitude, catalog.city.longitude])
+
+  useEffect(() => {
+    const map = loadedMap
+    const maplibre = libraryRef.current
+    if (!map || map !== mapRef.current || !maplibre) return
+    const markers: { remove: () => void }[] = []
+    const bounds = new maplibre.LngLatBounds()
+    const routes: GeoJSON.Feature<GeoJSON.LineString>[] = []
+    const places = new Map(catalog.places.map((place) => [place.id, place]))
+    for (const event of events) {
+      const place = places.get(event.place_id)
+      if (!place) continue
+      const point: [number, number] = [place.longitude, place.latitude]
+      bounds.extend(point)
+      const link = document.createElement("a")
+      link.href = `/actes/${event.id}`
+      link.textContent = eventText(event, locale).title
+      link.style.cssText = "color:#111;text-decoration:underline;font-size:16px"
+      markers.push(
+        new maplibre.Marker({
+          color: event.status === "cancelled" ? "#64748b" : "#9f1239",
+        })
+          .setLngLat(point)
+          .setPopup(new maplibre.Popup().setDOMContent(link))
+          .addTo(map)
+      )
+      if (event.route)
+        routes.push({
+          type: "Feature",
+          properties: {},
+          geometry: {
+            type: "LineString",
+            coordinates: event.route.map((item) => [item.lng, item.lat]),
+          },
+        })
+    }
+    const source = map.getSource(
+      "routes"
+    ) as import("maplibre-gl").GeoJSONSource
+    source.setData({ type: "FeatureCollection", features: routes })
+    if (!fitted.current && !bounds.isEmpty()) {
+      map.fitBounds(bounds, { padding: 60, maxZoom: 15, animate: false })
+      fitted.current = true
+    }
+    return () => {
+      markers.forEach((marker) => marker.remove())
+    }
+  }, [loadedMap, catalog.places, events, locale])
 
   return (
     <section aria-label="Mapa dels actes">

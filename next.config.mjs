@@ -1,5 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Isolate the synthetic load-test build from the deployable application.
+  distDir: process.env.CULTURE_LOAD_TEST === "1" ? ".next-culture-load" : ".next",
   async headers() {
     return [
       {

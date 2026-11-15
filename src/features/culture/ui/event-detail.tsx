@@ -15,7 +15,7 @@ export function EventDetail(props: {
 }) {
   return (
     <PreferencesProvider>
-      <PwaRegistration from={props.catalog.from} />
+      <PwaRegistration catalog={props.catalog} />
       <Content {...props} />
     </PreferencesProvider>
   )

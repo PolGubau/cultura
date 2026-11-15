@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server"
 import { CITY_ID, FALLBACK_CITY, hasDatabase } from "./config"
 import { addDays, dayKey, toUtc, validDay } from "../domain/time"
 import type { CatalogResult, City, CultureCatalog } from "../domain/types"
+import { cachePublicJson } from "./public-cache"
 
 const fields = {
   city: "id,name,timezone,latitude,longitude",
@@ -27,11 +28,21 @@ function anonymousClient() {
         autoRefreshToken: false,
         detectSessionInUrl: false,
       },
+      global: {
+        fetch: (input, init) =>
+          fetch(input, {
+            ...init,
+            cache: "no-store",
+            signal: init?.signal
+              ? AbortSignal.any([init.signal, AbortSignal.timeout(8_000)])
+              : AbortSignal.timeout(8_000),
+          }),
+      },
     }
   )
 }
 
-export async function loadCatalog(
+async function queryCatalog(
   fromInput?: string,
   admin = false
 ): Promise<CatalogResult> {
@@ -61,7 +72,7 @@ export async function loadCatalog(
   const end = toUtc(`${to}T00:00`, currentCity.timezone)
   let eventQuery = db
     .from("city_events")
-    .select(fields.events, { count: "exact" })
+    .select(fields.events)
     .eq("city_id", CITY_ID)
     .gt("ends_at", start)
     .lt("starts_at", end)
@@ -121,15 +132,41 @@ export async function loadCatalog(
       announcements: announcements.data,
       from,
       to,
-      hasMore: (events.count ?? 0) > 1000,
+      // Conservative at the cap: no full-table COUNT on every catalog refresh.
+      hasMore: events.data!.length >= 1000,
       fetchedAt: new Date().toISOString(),
     } as unknown as CultureCatalog,
     error: null,
   }
 }
 
-export async function loadPublicEvent(id: string) {
-  if (!hasDatabase() || !/^[0-9a-f-]{36}$/i.test(id)) return null
+const cachedCatalog = cachePublicJson("culture-catalog-v1", async (from) => {
+  const result = await queryCatalog(from)
+  if (!result.data)
+    throw new Error(result.error ?? "No es pot carregar l’agenda.")
+  return result.data
+})
+
+export async function loadCatalog(
+  fromInput?: string,
+  admin = false
+): Promise<CatalogResult> {
+  if (admin || !hasDatabase()) return queryCatalog(fromInput, admin)
+  const from =
+    fromInput && validDay(fromInput)
+      ? fromInput
+      : dayKey(new Date(), FALLBACK_CITY.timezone)
+  try {
+    return { data: await cachedCatalog(from), error: null }
+  } catch {
+    return {
+      data: null,
+      error: "Impossible carregar l’agenda. Torna-ho a provar.",
+    }
+  }
+}
+
+const cachedEvent = cachePublicJson("culture-event-v1", async (id) => {
   const { data, error } = await anonymousClient()
     .from("city_events")
     .select(fields.events)
@@ -139,6 +176,15 @@ export async function loadPublicEvent(id: string) {
     .maybeSingle()
   if (error) throw new Error("No es pot carregar l’acte. Torna-ho a provar.")
   return data as unknown as CultureCatalog["events"][number] | null
+})
+
+export async function loadPublicEvent(id: string) {
+  if (
+    !hasDatabase() ||
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
+  )
+    return null
+  return cachedEvent(id.toLowerCase())
 }
 
 export async function loadEventContext(id: string) {
@@ -149,7 +195,8 @@ export async function loadEventContext(id: string) {
   )
   if (!result.data) throw new Error("No es pot carregar el context de l’acte.")
   // Include a directly linked event even if a busy 90-day window exceeds the list limit.
-  if (!result.data.events.some((item) => item.id === id))
-    result.data.events.push(event)
-  return { event, catalog: result.data }
+  const events = result.data.events.some((item) => item.id === event.id)
+    ? result.data.events
+    : [...result.data.events, event]
+  return { event, catalog: { ...result.data, events } }
 }

@@ -1,36 +1,58 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import type { CultureCatalog } from "../domain/types"
 
-export function PwaRegistration({ from }: { from?: string }) {
+export function PwaRegistration({
+  catalog,
+}: {
+  catalog: CultureCatalog | null
+}) {
   useEffect(() => {
     if (process.env.NODE_ENV === "production" && "serviceWorker" in navigator) {
-      let cancelled = false
       navigator.serviceWorker
         .register("/sw.js", { scope: "/", updateViaCache: "none" })
-        .then(async () => {
-          await navigator.serviceWorker.ready
-          if (cancelled) return
-          // Prime the first visit too: the new worker may not control this page yet.
-          const url = `/api/culture${from ? `?from=${encodeURIComponent(from)}` : ""}`
-          const response = await fetch(url, { cache: "no-store" })
-          if (response.ok && response.headers.get("X-Culture-Public") === "1") {
-            const cache = await caches.open("culture-v1-data")
-            await cache.put(url, response)
-            const keys = await cache.keys()
-            await Promise.all(
-              keys
-                .slice(0, Math.max(0, keys.length - 12))
-                .map((key) => cache.delete(key))
-            )
-          }
-        })
         .catch(() => {})
-      return () => {
-        cancelled = true
-      }
     }
-  }, [from])
+  }, [])
+  useEffect(() => {
+    if (
+      !catalog ||
+      process.env.NODE_ENV !== "production" ||
+      !("serviceWorker" in navigator)
+    )
+      return
+    let cancelled = false
+    // Reuse public SSR/refreshed data. Preparing offline mode requires no API call.
+    void navigator.serviceWorker.ready
+      .then(async () => {
+        if (cancelled) return
+        const cache = await caches.open("culture-v1-data")
+        const url = `/api/culture?from=${encodeURIComponent(catalog.from)}`
+        const existing = await cache.match(url)
+        const saved = existing ? await existing.json() : null
+        if (saved?.data?.fetchedAt > catalog.fetchedAt) return
+        await cache.put(
+          url,
+          Response.json(
+            { data: catalog, error: null },
+            {
+              headers: { "X-Culture-Public": "1" },
+            }
+          )
+        )
+        const keys = await cache.keys()
+        await Promise.all(
+          keys
+            .slice(0, Math.max(0, keys.length - 12))
+            .map((key) => cache.delete(key))
+        )
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [catalog])
   return null
 }
 

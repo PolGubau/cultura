@@ -40,7 +40,6 @@ export function CultureApp({
 }) {
   return (
     <PreferencesProvider>
-      <PwaRegistration />
       <CultureContent initial={initial} view={view} initialNow={initialNow} />
     </PreferencesProvider>
   )
@@ -61,6 +60,7 @@ function CultureContent({
   const [query, setQuery] = useState("")
   const [category, setCategory] = useState("")
   const [selectedDay, setSelectedDay] = useState("")
+  const [visibleCount, setVisibleCount] = useState(60)
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 30_000)
     return () => clearInterval(timer)
@@ -90,10 +90,11 @@ function CultureContent({
       view,
     ]
   )
+  const liveNow = view === "now" ? now : null
   const events = useMemo(
     () =>
       filtered.filter((event) => {
-        if (view === "now") return isLive(event, now)
+        if (liveNow) return isLive(event, liveNow)
         if (!selectedDay) return true
         return (
           dayKey(event.starts_at, data?.city.timezone) <= selectedDay &&
@@ -103,8 +104,9 @@ function CultureContent({
           ) >= selectedDay
         )
       }),
-    [filtered, view, now, selectedDay, data?.city.timezone]
+    [filtered, liveNow, selectedDay, data?.city.timezone]
   )
+  const mapEvents = useMemo(() => events.slice(0, 200), [events])
   const titles = {
     agenda: "Què fem a Mataró?",
     now: "Està passant ara",
@@ -127,6 +129,7 @@ function CultureContent({
           : undefined
       }
     >
+      <PwaRegistration catalog={data} />
       <header className="culture-header">
         <div className="culture-container culture-row culture-between">
           <Link href="/" className="culture-brand">
@@ -287,7 +290,10 @@ function CultureContent({
                 <input
                   type="search"
                   value={query}
-                  onChange={(event) => setQuery(event.target.value)}
+                  onChange={(event) => {
+                    setQuery(event.target.value)
+                    setVisibleCount(60)
+                  }}
                   placeholder="Acte, artista o organització"
                 />
               </label>
@@ -295,7 +301,10 @@ function CultureContent({
                 Categoria
                 <select
                   value={category}
-                  onChange={(event) => setCategory(event.target.value)}
+                  onChange={(event) => {
+                    setCategory(event.target.value)
+                    setVisibleCount(60)
+                  }}
                 >
                   <option value="">Totes</option>
                   {data?.categories.map((item) => (
@@ -314,6 +323,7 @@ function CultureContent({
                     onChange={(event) => {
                       const value = event.target.value
                       setSelectedDay(value)
+                      setVisibleCount(60)
                       if (
                         value &&
                         (!data || value < data.from || value >= data.to)
@@ -342,7 +352,7 @@ function CultureContent({
             {view === "map" && data && (
               <EventMap
                 catalog={data}
-                events={events.slice(0, 200)}
+                events={mapEvents}
                 locale={preferences.locale}
               />
             )}
@@ -354,15 +364,26 @@ function CultureContent({
             )}
             <div aria-busy={pending} className="culture-grid">
               {data &&
-                events.map((event) => (
-                  <EventCard
-                    key={event.id}
-                    event={event}
-                    catalog={data}
-                    now={now}
-                  />
-                ))}
+                events
+                  .slice(0, visibleCount)
+                  .map((event) => (
+                    <EventCard
+                      key={event.id}
+                      event={event}
+                      catalog={data}
+                      now={now}
+                    />
+                  ))}
             </div>
+            {events.length > visibleCount && (
+              <button
+                type="button"
+                className="culture-button"
+                onClick={() => setVisibleCount((count) => count + 60)}
+              >
+                Mostrar més actes ({visibleCount} de {events.length})
+              </button>
+            )}
             {events.length === 0 && (
               <section className="culture-empty">
                 <h2>
@@ -415,8 +436,8 @@ function CultureContent({
             )}
             {data?.hasMore && (
               <p className="culture-notice">
-                Hi ha més de 1.000 actes en aquest període. Tria una data
-                posterior per carregar els següents.
+                S’ha arribat al límit de 1.000 actes en aquest període. Tria una
+                data posterior per carregar els següents.
               </p>
             )}
           </>
@@ -425,7 +446,7 @@ function CultureContent({
           <p>Mataró · Cultura · Iniciativa independent</p>
           <div className="culture-row">
             <Link href="/legal/privacitat">Privacitat</Link>
-            <Link href="/support">Contacte</Link>
+            <Link href="/contacte">Contacte</Link>
             <Link href="/santes-2026">App de 2026</Link>
           </div>
           {data && (
