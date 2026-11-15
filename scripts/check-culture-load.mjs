@@ -17,7 +17,9 @@ const env = {
 let stop
 
 async function request(path, expected = 200) {
-  const response = await fetch(new URL(path, origin), { signal: AbortSignal.timeout(15_000) })
+  const response = await fetch(new URL(path, origin), {
+    signal: AbortSignal.timeout(15_000),
+  })
   assert.equal(response.status, expected, `${path}: unexpected status`)
   return { response, body: await response.text() }
 }
@@ -26,21 +28,27 @@ async function burst(label, path, total, concurrency, check) {
   let cursor = 0
   const times = []
   const started = performance.now()
-  await Promise.all(Array.from({ length: concurrency }, async () => {
-    while (cursor++ < total) {
-      const start = performance.now()
-      const result = await request(path)
-      times.push(performance.now() - start)
-      check?.(result)
-    }
-  }))
+  await Promise.all(
+    Array.from({ length: concurrency }, async () => {
+      while (cursor++ < total) {
+        const start = performance.now()
+        const result = await request(path)
+        times.push(performance.now() - start)
+        check?.(result)
+      }
+    })
+  )
   times.sort((a, b) => a - b)
   const seconds = (performance.now() - started) / 1000
-  console.log(`${label}: ${total} requests, concurrency ${concurrency}, ${(total / seconds).toFixed(1)} req/s, p95 ${times[Math.ceil(times.length * 0.95) - 1].toFixed(0)} ms, 0 errors`)
+  console.log(
+    `${label}: ${total} requests, concurrency ${concurrency}, ${(total / seconds).toFixed(1)} req/s, p95 ${times[Math.ceil(times.length * 0.95) - 1].toFixed(0)} ms, 0 errors`
+  )
 }
 
 try {
-  console.log("Building a LOCAL fixture production server with 1,000 synthetic events…")
+  console.log(
+    "Building a LOCAL fixture production server with 1,000 synthetic events…"
+  )
   await buildLocal(env)
   stop = await startLocal(origin, env)
 
@@ -55,7 +63,11 @@ try {
     assert.equal(response.headers.get("x-culture-public"), "1")
     assert.equal(response.headers.get("set-cookie"), null)
   })
-  assert.equal(upstream.calls() - before, 6, "Cold concurrent loads must share six upstream reads")
+  assert.equal(
+    upstream.calls() - before,
+    6,
+    "Cold concurrent loads must share six upstream reads"
+  )
 
   const warm = upstream.calls()
   await burst("Warm catalog", coldPath, 120, 24)
@@ -67,14 +79,23 @@ try {
     assert.ok(body.includes("Agenda cultural de Mataró"))
     assert.equal((body.match(/<article/g) ?? []).length, 60)
   })
-  assert.equal(upstream.calls(), htmlStart, "Cached HTML must not query upstream")
+  assert.equal(
+    upstream.calls(),
+    htmlStart,
+    "Cached HTML must not query upstream"
+  )
 
   // Cookie-bearing visitors must receive exactly the same anonymous catalog.
-  const authenticated = await fetch(new URL(coldPath, origin), { headers: { Cookie: "synthetic-admin=not-a-session" } })
+  const authenticated = await fetch(new URL(coldPath, origin), {
+    headers: { Cookie: "synthetic-admin=not-a-session" },
+  })
   assert.equal((await authenticated.json()).data.events.length, 1000)
   assert.equal(upstream.calls(), htmlStart)
 
   upstream.fail(true)
+  const outageCalls = upstream.calls()
+  await request(coldPath)
+  assert.equal(upstream.calls(), outageCalls, "Warm snapshots must survive an upstream outage")
   const failed = await request("/api/culture?from=2032-01-01", 503)
   assert.equal(failed.response.headers.get("cache-control"), "no-store")
   assert.equal(failed.response.headers.get("x-culture-public"), null)
@@ -82,7 +103,9 @@ try {
   await request("/api/culture?from=2032-01-01")
   await request("/api/culture?from=invalid", 400)
   upstream.assertValid()
-  console.log("PASS: cold coalescing, warm cache isolation, 60-card HTML, anonymous queries, error recovery. No real database/CDN/device capacity was measured.")
+  console.log(
+    "PASS: cold coalescing, warm cache isolation, 60-card HTML, anonymous queries, error recovery. No real database/CDN/device capacity was measured."
+  )
 } finally {
   stop?.()
   await upstream.close()

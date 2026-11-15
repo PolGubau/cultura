@@ -32,7 +32,7 @@ async function publicData(request) {
     // A stored snapshot can also cover a temporarily unavailable origin.
   }
   if (response?.ok) {
-    if (response.ok && response.headers.get("X-Culture-Public") === "1") {
+    if (response.headers.get("X-Culture-Public") === "1") {
       try {
         const cache = await caches.open(DATA)
         await cache.put(request, response.clone())

@@ -39,6 +39,7 @@ Aplicar en este orden usando el SQL Editor autenticado de Supabase, o el procedi
 1. `supabase/migrations/202611150001_culture.sql`: tablas nuevas `cities`, `city_memberships`, `city_categories`, `city_places`, `city_festivals`, `city_events`, `city_announcements`.
 2. `supabase/migrations/202611150002_permissions.sql`: permisos y Row Level Security (RLS, filtrado de filas en la base de datos).
 3. `supabase/migrations/202611150003_mataro.sql`: Mataró y categorías iniciales. Sin actos de prueba ni fechas inventadas de Santes 2027.
+4. `supabase/migrations/202611150004_performance.sql`: índices para la consulta pública de actos no caducados, orden estable y pertenencias por usuario.
 
 Crear/invitar el primer usuario en Authentication del dashboard y establecer su contraseña mediante el flujo de Supabase. Copiar su UUID (no un token) y ejecutar en el SQL Editor: `insert into public.city_memberships (city_id, user_id, role) values ('mataro', '<UUID_DEL_USUARIO>', 'owner');`.
 
@@ -60,7 +61,7 @@ El nuevo panel no necesita `SUPABASE_SERVICE_ROLE_KEY` ni `FESTIVAL_ID`. Las mut
 El service worker solo se registra en producción, bajo HTTPS o localhost. Comprobar con `pnpm build` y `pnpm start`, no con el servidor de desarrollo.
 
 - Guarda el lector estático y hasta doce respuestas públicas de `/api/culture`, con un máximo de 1.000 actos por consulta de 90 días. Si hay más, se avisa y se puede cambiar el período.
-- En la primera visita se prepara una copia pública al activarse el worker. Para forzar la actualización: Ajustos → Actualitzar l’agenda offline.
+- En la primera visita se prepara una copia pública con los datos ya recibidos, sin repetir la petición. Para forzar la actualización: Ajustos → Actualitzar l’agenda offline.
 - Sin red, las navegaciones públicas abren un lector sencillo con horarios, descripción, cancelación conocida y filtro de favoritos. Siempre identifica la copia y su fecha.
 - No se cachean páginas admin, acciones, cookies, respuestas RSC, mapas ni imágenes. Los datos antiguos pueden conservar contenido posteriormente retirado: offline no garantiza revocación instantánea ni avisos actualizados.
 - MapLibre y OpenFreeMap requieren red. La ubicación solo se solicita al pulsar el botón y no se guarda en el servidor.
@@ -69,10 +70,11 @@ El service worker solo se registra en producción, bajo HTTPS o localhost. Compr
 
 ## Validación
 
-- `node --test tests/*.test.*`: reglas de fechas/DST, modo fiesta, búsqueda, cancelaciones, validación, ICS y aislamiento de caché del service worker.
+- `node --test tests/*.test.*`: reglas de fechas/DST, modo fiesta, búsqueda, cancelaciones, validación, ICS, concurrencia, refresco e aislamiento de caché del service worker.
 - `pnpm typecheck`, `pnpm lint`, `pnpm build`.
 - Después del build, `node scripts/check-culture-http.mjs --start` inicia un servidor local en el puerto 3107, ejecuta 27 comprobaciones HTTP y lo cierra. Verifica rutas, manifiesto, iconos y entradas inválidas; no sustituye una prueba interactiva en navegador.
 - `supabase/tests/culture-rls.sql`: comprobación transaccional de permisos con dos ciudades; ejecutar solo en una base de desarrollo migrada. Termina en rollback. No se ha podido ejecutar aquí al no haber PostgreSQL/Docker ni un proyecto Supabase autorizado.
+- `node scripts/check-culture-load.mjs`: build aislado en `.next-culture-load` y carga local acotada con 1.000 actos sintéticos. Comprueba consultas reales del repositorio contra un servidor HTTP simulado, no PostgreSQL/RLS. No modifica `.next` ni conecta Supabase. Detalles y límites en [CULTURE-PERFORMANCE.md](./CULTURE-PERFORMANCE.md).
 
 Antes de publicar, probar en dispositivos reales: Safari iOS instalado, Android instalado, primera visita, avión tras carga, favorito tras recarga, acto nocturno, denegación de ubicación, cancelación actualizada y acceso de un usuario sin pertenencia. Los tests de worker se ejecutan en un entorno simulado, no sustituyen esta prueba de navegador.
 
@@ -83,4 +85,4 @@ Antes de publicar, probar en dispositivos reales: Safari iOS instalado, Android 
 - Cargar programación confirmada y revisar traducciones y accesibilidad del contenido.
 - Decidir el archivo de 2026; no se ha importado automáticamente.
 - Web Push, recordatorios en segundo plano, analítica consentida, administración de miembros, subida de imágenes y autoservicio de entidades no están implementados. Los logos e imágenes se introducen por URL HTTPS.
-- Medir carga y cuotas del proveedor de mapas antes de campaña; no se ha hecho prueba de estrés ni auditoría legal/de accesibilidad certificada.
+- Validar capacidad en el alojamiento definitivo y cuotas del proveedor de mapas antes de campaña. La prueba local no certifica capacidad de producción ni sustituye una auditoría legal/de accesibilidad.
