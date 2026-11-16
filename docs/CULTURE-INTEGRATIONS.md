@@ -12,7 +12,7 @@ The new Android entry is `/(culture)`. Legacy festival screens/resources remain 
 
 ## Configure Android
 
-Set `EXPO_PUBLIC_CULTURE_API_URL` to the HTTPS **origin** of the deployed PWA (no path, no trailing slash required). This is a public address, never an API key. Local Android emulator testing uses the host-accessible local development origin. Expo and Next install separately with `pnpm install --frozen-lockfile` in each directory.
+Set `EXPO_PUBLIC_CULTURE_API_URL` in `app/.env.local` to the HTTPS **origin** of the deployed PWA (no path, no trailing slash required). This is a public address, never an API key. For local Android emulator development, `http://10.0.2.2:3000` addresses the host machine; physical devices need a reachable host and production builds should use HTTPS. `EXPO_PUBLIC_MAPTILER_KEY` is optional and public. The cultural client does not use `EXPO_PUBLIC_FESTIVAL_ID`, festival dates or Expo Supabase credentials; existing legacy scripts and screens may still use their old settings. Expo and Next install separately with `pnpm install --frozen-lockfile` in each directory.
 
 Both clients offer Agenda, Ara, Mapa, Favorits and Ajustos. Favorite IDs, locale and festival mode are local to each device, not account-synchronized. The native catalogue is restored before refresh and only successful downloads replace it. The PWA has its own service worker/offline reader. Maps and images are not guaranteed offline. A native map uses the existing MapLibre WebView renderer, not a WebView of the web application.
 

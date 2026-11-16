@@ -24,7 +24,7 @@ El repositorio público usa un cliente anónimo sin cookies incluso si el visita
 Requiere Node.js 24 para ejecutar los tests TypeScript con el runner nativo, y pnpm. No se añade un framework de tests.
 
 1. En `landing`, ejecutar `pnpm install --frozen-lockfile`.
-2. Crear `.env.local` desde `.env.culture.example` y completar los valores en el editor, sin pegarlos en comandos ni commits.
+2. Crear `.env.local` desde `.env.example` y completar los valores en el editor, sin pegarlos en comandos ni commits.
 3. Ejecutar las migraciones descritas debajo en un proyecto Supabase de desarrollo.
 4. Ejecutar `pnpm dev`. Sin Supabase se muestra un estado explícito de configuración pendiente, no contenido inventado.
 
