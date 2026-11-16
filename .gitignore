@@ -9,6 +9,8 @@ node_modules/
 # Expo
 .expo/
 dist/
+/dist-*/
+/build/
 web-build/
 expo-env.d.ts
 
@@ -51,3 +53,4 @@ coverage/
 
 
 keys.json
+dist-culture-check/
