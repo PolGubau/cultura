@@ -9,7 +9,7 @@ Agenda web responsive y PWA en Next.js. Mataró es la única ciudad visible. Las
 - Fiesta publicada con logo, color, prioridad y activación automática por fechas inclusivas en la zona horaria de la ciudad. También puede elegirse manualmente.
 - Admin: lugares reutilizables, categorías, fiestas, actos manuales, traducciones, borrador/publicación, cancelación con motivo, duplicación como borrador y avisos con caducidad.
 - Exportación ICS y compartir mediante las funciones disponibles del navegador.
-- La antigua landing queda en `/santes-2026`. La app Expo de `../app` no se ha migrado ni modificado.
+- La antigua landing queda en `/santes-2026`. Expo es ahora otro cliente nativo del mismo catálogo, con dominio y SDK en `../shared/culture`. Configuración y API municipal: [CULTURE-INTEGRATIONS.md](./CULTURE-INTEGRATIONS.md).
 
 ## Arquitectura
 

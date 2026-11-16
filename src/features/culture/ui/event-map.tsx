@@ -17,7 +17,7 @@ export default function EventMap({
 }) {
   const container = useRef<HTMLDivElement>(null)
   const mapRef = useRef<MapInstance | null>(null)
-  const libraryRef = useRef<typeof import("maplibre-gl").default | null>(null)
+  const libraryRef = useRef<Pick<typeof import("maplibre-gl"), "Map" | "Marker" | "Popup" | "LngLatBounds"> | null>(null)
   const [loadedMap, setLoadedMap] = useState<MapInstance | null>(null)
   const fitted = useRef(false)
   const [error, setError] = useState("")

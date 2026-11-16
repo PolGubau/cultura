@@ -3,6 +3,9 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import type { CatalogResult } from "../domain/types"
 import { nextRefreshDelay, REFRESH_INTERVAL_MS } from "../domain/refresh"
+import { createCultureClient } from "../../../../../shared/culture/client"
+
+const client = createCultureClient("")
 
 export function useCatalog(initial: CatalogResult) {
   const [result, setResult] = useState(initial)
@@ -27,20 +30,15 @@ export function useCatalog(initial: CatalogResult) {
     setPending(true)
     try {
       const period = currentFrom.current
-      const response = await fetch(
-        `/api/culture${period ? `?from=${encodeURIComponent(period)}` : ""}`,
-        { signal: requestSignal }
-      )
-      const next: CatalogResult = await response.json()
-      if (!response.ok || !next.data)
-        throw new Error(next.error || "No es pot actualitzar.")
+      const snapshot = await client.catalog(period, requestSignal)
+      const next: CatalogResult = { data: snapshot.data, error: null }
       if (requestSignal.aborted || requestId !== latestRequest.current) return
       setResult((previous) =>
         previous.data?.fetchedAt === next.data?.fetchedAt && !previous.error
           ? previous
           : next
       )
-      setOffline(response.headers.get("X-Culture-Offline") === "1")
+      setOffline(snapshot.offline)
     } catch (error) {
       if (requestSignal.aborted || requestId !== latestRequest.current) return
       setResult((previous) => ({

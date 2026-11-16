@@ -1,5 +1,9 @@
+import { fileURLToPath } from "node:url"
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  turbopack: { root: fileURLToPath(new URL("../", import.meta.url)) },
+  outputFileTracingRoot: fileURLToPath(new URL("../", import.meta.url)),
   // Isolate the synthetic load-test build from the deployable application.
   distDir:
     process.env.CULTURE_LOAD_TEST === "1" ? ".next-culture-load" : ".next",

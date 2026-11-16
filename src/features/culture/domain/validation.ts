@@ -82,6 +82,11 @@ function dateRange(form: FormData, timezone: string) {
 }
 
 export function parseEvent(form: FormData, timezone: string) {
+  return { ...parseEventContent(form), ...dateRange(form, timezone) }
+}
+
+/** Shared by the admin form and JSON integration adapter; dates have different transports. */
+export function parseEventContent(form: FormData) {
   const translations: CulturalEvent["translations"] = {
     ca: { title: "", summary: "", description: "" },
   }
@@ -134,7 +139,6 @@ export function parseEvent(form: FormData, timezone: string) {
   const festival = text(form, "festival_id")
   return {
     translations,
-    ...dateRange(form, timezone),
     route,
     publication: publication(form),
     status,

@@ -1,17 +1,4 @@
-/** Local dates are always interpreted in the city's timezone, never the device's. */
-export function dayKey(
-  value: Date | string,
-  timezone = "Europe/Madrid"
-): string {
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: timezone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(new Date(value))
-  const get = (type: string) => parts.find((part) => part.type === type)!.value
-  return `${get("year")}-${get("month")}-${get("day")}`
-}
+export { dayKey, formatDate } from "../../../../../shared/culture/presentation.ts"
 
 export function localInput(value: string, timezone = "Europe/Madrid"): string {
   const parts = new Intl.DateTimeFormat("en-GB", {
@@ -65,17 +52,3 @@ export function toUtc(value: string, timezone = "Europe/Madrid"): string {
   return candidates[0]
 }
 
-export function formatDate(
-  value: string,
-  timezone: string,
-  locale = "ca"
-): string {
-  return new Intl.DateTimeFormat(locale, {
-    timeZone: timezone,
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(value))
-}

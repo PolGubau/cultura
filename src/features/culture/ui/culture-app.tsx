@@ -15,19 +15,16 @@ import { EventCard } from "./event-card"
 import { PreferencesProvider, usePreferences } from "./preferences"
 import { InstallHelp, PwaRegistration } from "./pwa"
 import { useCatalog } from "./use-catalog"
+import { CalendarDotsIcon, LightningIcon, MapTrifoldIcon, HeartIcon, GearSixIcon } from "@phosphor-icons/react"
+import { cultureNavigation } from "../../../../../shared/culture/presentation"
 
 const EventMap = dynamic(() => import("./event-map"), {
   ssr: false,
   loading: () => <p>Carregant el mapa…</p>,
 })
 export type CultureView = "agenda" | "now" | "map" | "favorites" | "settings"
-const nav = [
-  ["/", "Agenda", "agenda"],
-  ["/ara", "Ara", "now"],
-  ["/mapa", "Mapa", "map"],
-  ["/favorits", "Favorits", "favorites"],
-  ["/ajustos", "Ajustos", "settings"],
-] as const
+const navViews = ["agenda", "now", "map", "favorites", "settings"] as const
+const navIcons = [CalendarDotsIcon, LightningIcon, MapTrifoldIcon, HeartIcon, GearSixIcon]
 
 export function CultureApp({
   initial,
@@ -144,16 +141,20 @@ function CultureContent({
       </header>
       <nav className="culture-nav" aria-label="Navegació principal">
         <div className="culture-container culture-row">
-          {nav.map(([href, title, key]) => (
+          {cultureNavigation.map(({ path: href, title }, index) => {
+            const key = navViews[index]
+            const Icon = navIcons[index]
+            return (
             <Link
               key={key}
               href={href}
               prefetch={false}
               aria-current={view === key ? "page" : undefined}
             >
-              {title}
+              <Icon size={22} weight={view === key ? "fill" : "regular"} aria-hidden />
+              <span>{title}</span>
             </Link>
-          ))}
+          )})}
         </div>
       </nav>
       <main id="main-content" className="culture-container culture-main">

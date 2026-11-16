@@ -1,4 +1,11 @@
 .culture-app {
+  --background: #faf8f5;
+  --foreground: #1a1110;
+  --card: #ffffff;
+  --muted-foreground: #776c6a;
+  --border: #e4ddd6;
+  --primary: #c41e3a;
+  --primary-foreground: #ffffff;
   min-height: 100dvh;
   background: var(--background);
   color: var(--foreground);
@@ -31,6 +38,10 @@
   gap: 0;
 }
 .culture-nav a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
   padding: 1rem 0.6rem;
   font-size: 0.9rem;
   text-decoration: none;
@@ -280,4 +291,20 @@
   .culture-card {
     padding: 1rem;
   }
+}
+
+/* The same five destinations as Android, reachable with one thumb on mobile. */
+@media (max-width: 767px) {
+  .culture-app .culture-main { padding-block: 1.25rem calc(6rem + env(safe-area-inset-bottom)); }
+  .culture-app .culture-header { padding-top: max(1rem, env(safe-area-inset-top)); background: var(--card); }
+  .culture-app .culture-nav { position: fixed; top: auto; bottom: 0; left: 0; right: 0; background: var(--card); border-top: 1px solid var(--border); border-bottom: 0; padding-bottom: env(safe-area-inset-bottom); }
+  .culture-app .culture-nav .culture-container { width: 100%; }
+  .culture-app .culture-nav a { flex: 1; min-width: 0; min-height: 64px; flex-direction: column; gap: 3px; padding: 8px 2px; font-size: 11px; color: var(--muted-foreground); border-bottom: 0; }
+  .culture-app .culture-nav a[aria-current="page"] { color: var(--primary); }
+  .culture-app h1 { font-size: 30px; line-height: 36px; }
+  .culture-app .culture-intro { padding-block: 0.5rem 1.25rem; }
+  .culture-app .culture-grid { gap: 16px; }
+  .culture-app .culture-card { padding: 18px; }
+  .culture-app .culture-filters { gap: 12px; }
+  .culture-app .culture-filters .culture-field:first-child { flex-basis: 100%; }
 }

@@ -91,6 +91,14 @@ async function runChecks() {
   assert.ok(missingEvent.includes("Acte no trobat"))
   assert.match(missingEvent, /name="robots" content="[^"]*noindex/)
   await check("/api/culture/events/invalid-id/calendar", 404)
+  await check("/api/culture/events/invalid-id", 404)
+  const spec = await (await check("/api/v1/openapi.json")).json()
+  assert.equal(spec.openapi, "3.1.0")
+  for (const path of ["/api/v1/events", "/api/v1/events/00000000-0000-0000-0000-000000000001"]) {
+    const denied = await check(path, 401)
+    assert.equal(denied.headers.get("cache-control"), "private, no-store")
+    assert.equal(denied.headers.get("www-authenticate"), "Bearer")
+  }
   await check("/opengraph-image")
   console.log(
     `${checks} production HTTP checks passed (pages, cache headers, manifest, icons, offline assets, metadata and invalid inputs).`
