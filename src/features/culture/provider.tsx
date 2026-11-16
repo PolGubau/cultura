@@ -15,6 +15,7 @@ function useCultureState() {
   const [data, setData] = useState<CultureCatalog | null>(null);
   const [preferences, setPreferences] = useState(defaults);
   const [pending, setPending] = useState(true);
+  const [pagingPaused, setPagingPaused] = useState(false);
   const [offline, setOffline] = useState(false);
   const [error, setError] = useState('');
   const [storageError, setStorageError] = useState(false);
@@ -41,6 +42,7 @@ function useCultureState() {
       const result = await cultureClient.catalog(currentFrom.current, request.signal, currentCity.current);
       if (request.signal.aborted) return;
       loadedExtraPages.current = false;
+      setPagingPaused(false);
       resultCity.current = result.data.selectedCity ?? '';
       setData(result.data); setOffline(result.offline); setError('');
       await AsyncStorage.setItem(CACHE, JSON.stringify(result.data)).catch(() => setStorageError(true));
@@ -63,6 +65,7 @@ function useCultureState() {
       const page = await cultureClient.catalog(data.from, request.signal, data.selectedCity, data.nextOffset);
       if (request.signal.aborted) return;
       loadedExtraPages.current = true;
+      setPagingPaused(true);
       const merged = mergeCatalogPages(data, page.data);
       setData(merged); setOffline(page.offline); setError('');
       await AsyncStorage.setItem(CACHE, JSON.stringify(merged)).catch(() => setStorageError(true));
@@ -120,7 +123,7 @@ function useCultureState() {
 
   const festival = preferences.mode === 'auto' && data?.selectedCity === '' ? null : resolveFestival(data?.festivals ?? [], preferences.mode, dayKey(now, data?.city.timezone));
   const primary = festival?.primary_color ?? cultureTheme.primary;
-  return { data, preferences, setPreferences, pending, offline, error, storageError, now, festival, primary, refresh, loadMore };
+  return { data, preferences, setPreferences, pending, offline, error, storageError, now, festival, primary, refresh, loadMore, pagingPaused };
 }
 const Context = createContext<ReturnType<typeof useCultureState> | null>(null);
 export function CultureProvider({ children }: { children: React.ReactNode }) {

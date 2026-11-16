@@ -11,7 +11,7 @@ import { CultureMap } from './map';
 export type CultureView = 'agenda' | 'now' | 'map' | 'favorites' | 'settings';
 const titles: Record<CultureView, string> = { agenda: 'Què fem?', now: 'Està passant ara', map: 'La cultura, al mapa', favorites: 'La teva agenda', settings: 'Al teu gust' };
 export function CultureScreen({ view }: { view: CultureView }) {
-  const { data, festival, preferences, setPreferences, now, pending, refresh, loadMore } = useCulture();
+  const { data, festival, preferences, setPreferences, now, pending, refresh, loadMore, pagingPaused } = useCulture();
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('');
   const [day, setDay] = useState('');
@@ -83,6 +83,7 @@ export function CultureScreen({ view }: { view: CultureView }) {
         <Text style={styles.body}>Canvia els filtres o consulta un altre període. No mostrem programació de prova.</Text></View>}
       ListFooterComponent={data ? <View style={styles.header}>
         {data.nextOffset != null && <><Text style={styles.meta}>Hi ha més actes en aquest període que encara no s’han carregat.</Text><Button title="Carregar més actes" disabled={pending} onPress={() => void loadMore()} /></>}
+        {pagingPaused && <><Text style={styles.meta}>L’actualització automàtica està pausada mentre consultes diverses pàgines.</Text><Button title="Actualitzar i tornar a la primera pàgina" disabled={pending} onPress={() => void refresh(data.from)} /></>}
         {data.hasMore && data.nextOffset == null && <Text style={styles.meta}>S’ha arribat al límit de consulta. Tria un municipi o una data més concreta.</Text>}
         {view !== 'now' && <View style={styles.row}><Button title="← Període anterior" disabled={pending} onPress={() => { setDay(''); void refresh(shiftDay(data.from, -90)); }} />
           <Button title="Període següent →" disabled={pending} onPress={() => { setDay(''); void refresh(data.to); }} /></View>
