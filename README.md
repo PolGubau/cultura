@@ -6,10 +6,11 @@ Monorepositorio con la agenda web, la aplicación Expo y su código compartido:
 - `app/`: aplicación móvil Expo.
 - `shared/culture/`: dominio y cliente HTTP compilados por ambas aplicaciones; no se publica como paquete.
 
-Cada aplicación mantiene su propia instalación y lockfile para aislar sus versiones de React. Desde la raíz:
+Cada aplicación mantiene su propia instalación y lockfile para aislar sus versiones de React. Sus archivos `pnpm-workspace.yaml` solo autorizan explícitamente los scripts de dependencias necesarios; no comparten instalaciones. Usa pnpm 11. Desde la raíz:
 
-1. En `landing/`, ejecuta `pnpm install --frozen-lockfile`, `pnpm test` y `pnpm build`.
-2. En `app/`, ejecuta `pnpm install --frozen-lockfile` y `pnpm start` o la exportación de Expo.
+1. Ejecuta `node --test tests/monorepo.test.mjs` para verificar la estructura y las exclusiones de secretos.
+2. En `landing/`, ejecuta `pnpm install --frozen-lockfile`, `pnpm test` y `pnpm build`.
+3. En `app/`, ejecuta `pnpm install --frozen-lockfile` y `pnpm start` o la exportación de Expo.
 
 ## Despliegue
 

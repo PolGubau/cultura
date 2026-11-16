@@ -1,0 +1,5 @@
+# Keep this project independent and explicitly review dependency build scripts.
+allowBuilds:
+  msw: false
+  sharp: true
+  unrs-resolver: true

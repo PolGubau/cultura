@@ -1,0 +1,3 @@
+# Expo dependencies are installed independently from the web application.
+allowBuilds:
+  sharp: true
