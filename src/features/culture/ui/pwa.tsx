@@ -29,7 +29,7 @@ export function PwaRegistration({
         const url = catalogPath(catalog.from, catalog.selectedCity)
         const existing = await cache.match(url)
         const saved = existing ? await existing.json() : null
-        if (saved?.data?.fetchedAt > catalog.fetchedAt) return
+        if (cancelled || saved?.data?.fetchedAt > catalog.fetchedAt) return
         await cache.put(
           url,
           Response.json(

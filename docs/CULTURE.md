@@ -1,8 +1,8 @@
-# Mataró Cultura
+# Agenda cultural
 
 ## Alcance
 
-Agenda web responsive y PWA en Next.js. Mataró es la única ciudad visible. Las fiestas son capas opcionales sobre la agenda anual; no son ciudades ni aplicaciones separadas.
+Agenda web responsive y PWA en Next.js para los municipios disponibles en la base de datos. Inicialmente solo se han preparado datos de Mataró; no se incorporan automáticamente municipios ni programación. Las fiestas son capas opcionales sobre la agenda anual.
 
 - Agenda por períodos de 90 días, búsqueda, categorías, día, «Ara», mapa y detalle con enlace estable `/actes/{uuid}`.
 - Favoritos, idioma del contenido y modo ciudad/fiesta guardados en este navegador. Interfaz en catalán; contenido ca/es/en con fallback a catalán.
@@ -16,7 +16,7 @@ Agenda web responsive y PWA en Next.js. Mataró es la única ciudad visible. Las
 
 `src/features/culture/domain` contiene tipos y reglas puras; `server` contiene autorización, repositorios y escrituras; `ui` contiene componentes públicos y admin. `app` adapta rutas y acciones de Next.js.
 
-El mapa público consulta actos publicados de todas las ciudades en el área visible; permite filtrar por municipio, fiesta y día. Agrupa los puntos y carga 200 por petición: si hay más, ofrece cargar la página siguiente. El período predeterminado es de 90 días. Los detalles usan la ciudad real del acto. Las consultas se hacen como anónimo, respetando RLS; la zona visible se envía al servidor. La agenda, las propuestas y el panel siguen ligados a `CULTURE_CITY_ID`, que solo se resuelve en `server/config.ts`. Todavía no hay alta de municipios ni selección de ciudad administrativa.
+La agenda consulta todos los municipios disponibles por defecto y permite filtrar por municipio. Carga páginas de 1.000 actos durante un período de 90 días; la búsqueda, favoritos y filtros se aplican a los actos ya cargados, y se avisa cuando quedan páginas pendientes. El mapa consulta actos publicados del área visible y permite filtrar por municipio, fiesta y día. Agrupa los puntos y carga 200 por petición, con un aviso y opción de cargar más. La zona visible se envía al servidor. Los detalles usan la ciudad real del acto y las consultas públicas se hacen como anónimo, respetando RLS. Las propuestas y el panel siguen ligados a `CULTURE_CITY_ID`; todavía no hay alta de municipios ni selección de ciudad administrativa.
 
 El repositorio público usa un cliente anónimo sin cookies incluso si el visitante es administrador. Las escrituras del editor usan su sesión y RLS. Las propuestas públicas pasan exclusivamente por una función del servidor con service key y límites en la base de datos; no se concede acceso anónimo directo a la tabla. Las claves externas compuestas impiden asociar actos y avisos a recursos de otra ciudad.
 
@@ -69,7 +69,7 @@ Las propuestas se limitan a cinco por IP y 100 por ciudad y hora; no es un CAPTC
 
 El service worker solo se registra en producción, bajo HTTPS o localhost. Comprobar con `pnpm build` y `pnpm start`, no con el servidor de desarrollo.
 
-- Guarda el lector estático y hasta doce respuestas públicas de `/api/culture`, con un máximo de 1.000 actos por consulta de 90 días. Si hay más, se avisa y se puede cambiar el período.
+- Guarda el lector estático y hasta doce respuestas públicas de `/api/culture`; cada página consulta hasta 1.000 actos de un período de 90 días. La copia offline puede ser parcial y se avisa si quedan páginas.
 - En la primera visita se prepara una copia pública con los datos ya recibidos, sin repetir la petición. Para forzar la actualización: Ajustos → Actualitzar l’agenda offline.
 - Sin red, las navegaciones públicas abren un lector sencillo con horarios, descripción, cancelación conocida y filtro de favoritos. Siempre identifica la copia y su fecha.
 - No se cachean páginas admin, acciones, cookies, respuestas RSC, mapas ni imágenes. Los datos antiguos pueden conservar contenido posteriormente retirado: offline no garantiza revocación instantánea ni avisos actualizados.

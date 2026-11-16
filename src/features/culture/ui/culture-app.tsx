@@ -229,6 +229,7 @@ function CultureContent({
             <aside key={item.id} className="culture-notice" role="status">
               <strong>
                 {item.severity === "critical" ? "Important · " : ""}
+                {!data.selectedCity && item.city_id ? `${data.cities?.find((city) => city.id === item.city_id)?.name ?? item.city_id} · ` : ""}
                 {item.title}
               </strong>
               <p>{item.message}</p>

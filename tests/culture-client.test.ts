@@ -15,6 +15,14 @@ test("public SDK never sends authentication; preserves offline labelling and abo
   assert.equal(result.offline, true)
   assert.equal(result.data.events.length, 1)
 })
+test("public catalog SDK sends city and page while preserving anonymous access", async () => {
+  const client = createCultureClient("", async (url, init) => {
+    assert.equal(url, "/api/culture?from=2027-07-25&city=girona&offset=1000")
+    assert.equal(init?.headers, undefined)
+    return Response.json({ data: { events: [] }, error: null })
+  })
+  assert.equal((await client.catalog("2027-07-25", undefined, "girona", 1000)).data.events.length, 0)
+})
 test("municipal SDK sends full replacement and exact strong precondition", async () => {
   const data = event()
   const version = '"2027-07-25T18:00:00.123456Z"'

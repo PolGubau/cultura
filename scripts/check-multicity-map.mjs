@@ -1,6 +1,7 @@
 import assert from "node:assert/strict"
 import { createServer } from "node:http"
 import { localOrigin, buildLocal, startLocal } from "./lib/culture-local.mjs"
+import { event } from "../tests/culture-fixtures.ts"
 
 // Loopback fixtures only; no real database, users or credentials.
 const requests = []
@@ -16,6 +17,18 @@ const upstream = createServer((request, response) => {
       place: { latitude: 41, longitude: 2 }, city: { id: i % 2 ? "girona" : "mataro" },
     }))
     response.end(JSON.stringify(rows))
+  } else if (url.pathname.endsWith("/cities")) {
+    response.end(JSON.stringify(["girona", "mataro"].map((id) => ({ id, name: id, timezone: "Europe/Madrid", latitude: 41, longitude: 2 }))))
+  } else if (url.pathname.endsWith("/city_events")) {
+    const offset = Number(url.searchParams.get("offset") ?? 0)
+    const city = url.searchParams.get("city_id")?.replace("eq.", "")
+    const rows = offset ? [1000] : Array.from({ length: 1000 }, (_, i) => i)
+    response.end(JSON.stringify(rows.map((i) => {
+      const cityId = city ?? (i % 2 ? "girona" : "mataro")
+      return { ...event({ id: `11111111-1111-4111-8111-${String(i).padStart(12, "0")}`, city_id: cityId, place_id: `place-${cityId}` }),
+        place: { id: `place-${cityId}`, name: cityId, address: "", latitude: 41, longitude: 2 },
+        category: { id: "musica", name: `Música ${cityId}` } }
+    })))
   } else response.end(JSON.stringify([]))
 })
 await new Promise((resolve) => upstream.listen(0, "127.0.0.1", resolve))
@@ -47,7 +60,22 @@ try {
   assert.equal(filtered.searchParams.get("city_id"), "eq.girona")
   assert.equal(filtered.searchParams.get("offset"), "200")
   assert.equal((await fetch(new URL("/api/culture/map?west=NaN", origin))).status, 400)
-  console.log("PASS: map endpoint, viewport, anonymous query, multiple cities, pagination and validation (mock upstream; not PostgreSQL/RLS).")
+  const catalog = (await (await fetch(new URL("/api/culture?from=2027-07-01", origin))).json()).data
+  assert.equal(catalog.events.length, 1000)
+  assert.equal(catalog.nextOffset, 1000)
+  assert.deepEqual(new Set(catalog.categories.map((item) => item.city_id)), new Set(["mataro", "girona"]))
+  const catalogPage = await fetch(new URL("/api/culture?from=2027-07-01&city=girona&offset=1000", origin))
+  assert.equal(catalogPage.status, 200)
+  const page = (await catalogPage.json()).data
+  assert.equal(page.selectedCity, "girona")
+  assert.equal(page.events[0].city_id, "girona")
+  assert.equal(page.nextOffset, null)
+  const catalogQuery = requests.findLast((item) => item.pathname.endsWith("/city_events"))
+  assert.equal(catalogQuery.searchParams.get("city_id"), "eq.girona")
+  assert.equal(catalogQuery.searchParams.get("offset"), "1000")
+  assert.equal((await fetch(new URL("/api/culture?offset=1", origin))).status, 400)
+  assert.equal((await fetch(new URL("/api/culture?city=INVALID", origin))).status, 400)
+  console.log("PASS: map and catalog endpoints, viewport, anonymous queries, multiple cities, pagination and validation (mock upstream; not PostgreSQL/RLS).")
 } finally {
   stop?.()
   await new Promise((resolve) => upstream.close(resolve))

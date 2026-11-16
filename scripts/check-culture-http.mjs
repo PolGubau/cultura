@@ -44,6 +44,7 @@ async function runChecks() {
     "/favorits",
     "/ajustos",
     "/proposa",
+    "/descobreix",
     "/legal/privacitat",
     "/contacte",
     "/admin",
@@ -64,10 +65,10 @@ async function runChecks() {
   const home = await check("/")
   assert.match(home.headers.get("cache-control"), /s-maxage=30/)
   assert.equal(home.headers.get("set-cookie"), null)
-  assert.match(await home.text(), /Agenda cultural de Mataró/)
+  assert.match(await home.text(), /Agenda cultural de Catalunya/)
   const manifest = await (await check("/manifest.webmanifest")).json()
   assert.equal(manifest.start_url, "/")
-  assert.equal(manifest.name, "Agenda cultural de Mataró")
+  assert.equal(manifest.name, "Agenda cultural de Catalunya")
   for (const icon of manifest.icons) await check(icon.src)
   await check("/culture-icons/apple-touch-icon.png")
   const worker = await check("/sw.js")

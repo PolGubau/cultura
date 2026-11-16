@@ -166,9 +166,9 @@ async function queryPublicCatalog(from: string, cityId: string, offset: number):
     .lt("starts_at", toUtc(`${to}T00:00`, "Europe/Madrid"))
     .order("starts_at").order("id").range(offset, offset + 999)
   if (cityId) events = events.eq("city_id", cityId)
-  const announcements = cityId
-    ? db.from("city_announcements").select(fields.announcements).eq("city_id", cityId).eq("publication", "published").order("starts_at", { ascending: false }).limit(100)
-    : Promise.resolve({ data: [], error: null })
+  let announcements = db.from("city_announcements").select(`${fields.announcements},city_id`)
+    .eq("publication", "published").order("starts_at", { ascending: false }).limit(100)
+  if (cityId) announcements = announcements.eq("city_id", cityId)
   const [cities, festivals, rows, notices] = await Promise.all([
     all("cities", fields.city), all("city_festivals", `${fields.festivals},city_id`), events, announcements,
   ])

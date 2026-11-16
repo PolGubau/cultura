@@ -65,8 +65,8 @@ try {
   })
   assert.equal(
     upstream.calls() - before,
-    6,
-    "Cold concurrent loads must share six upstream reads"
+    4,
+    "Cold concurrent loads must share four upstream reads"
   )
 
   const warm = upstream.calls()
@@ -76,7 +76,7 @@ try {
   await request("/")
   const htmlStart = upstream.calls()
   await burst("Warm HTML", "/", 120, 24, ({ body }) => {
-    assert.ok(body.includes("Agenda cultural de Mataró"))
+    assert.ok(body.includes("Agenda cultural de Catalunya"))
     assert.equal((body.match(/<article/g) ?? []).length, 60)
   })
   assert.equal(

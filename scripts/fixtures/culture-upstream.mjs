@@ -57,10 +57,8 @@ export async function cultureUpstream() {
     try {
       assert.equal(request.method, "GET")
       assert.ok(Object.hasOwn(tables, table))
-      assert.equal(
-        url.searchParams.get(table === "cities" ? "id" : "city_id"),
-        "eq.mataro"
-      )
+      const cityFilter = url.searchParams.get(table === "cities" ? "id" : "city_id")
+      assert.ok(cityFilter === null || cityFilter === "eq.mataro")
       if (
         ["city_events", "city_festivals", "city_announcements"].includes(table)
       ) {
@@ -74,10 +72,19 @@ export async function cultureUpstream() {
       invalid++
     }
     const id = url.searchParams.get("id")?.replace(/^eq\./, "")
-    const data =
+    let data =
       table === "city_events" && id
         ? events.filter((item) => item.id === id)
         : tables[table]
+    if (table === "cities" && !id) data = [city]
+    if (table === "city_events" && !id && url.searchParams.get("select")?.includes("place:city_places")) {
+      data = events.map((item) => ({ ...item, place: tables.city_places[0], category: tables.city_categories[0] }))
+    }
+    if (Array.isArray(data)) {
+      const offset = Number(url.searchParams.get("offset") ?? 0)
+      const limit = Number(url.searchParams.get("limit") ?? data.length)
+      data = data.slice(offset, offset + limit)
+    }
     // Include latency to expose cold-request stampedes instead of hiding them.
     setTimeout(() => {
       response.writeHead(failing ? 503 : 200, {

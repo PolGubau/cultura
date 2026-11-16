@@ -40,11 +40,7 @@ export function useCatalog(initial: CatalogResult) {
       if (requestSignal.aborted || requestId !== latestRequest.current) return
       loadedExtraPages.current = false
       resultCity.current = snapshot.data.selectedCity ?? ""
-      setResult((previous) =>
-        previous.data?.fetchedAt === next.data?.fetchedAt && !previous.error
-          ? previous
-          : next
-      )
+      setResult(next)
       setOffline(snapshot.offline)
     } catch (error) {
       if (requestSignal.aborted || requestId !== latestRequest.current) return
