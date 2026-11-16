@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { AUTHOR_NAME, CONTACT_EMAIL } from "@/lib/constants"
 
-export const metadata = { title: "Privacitat de l’agenda web" }
+export const metadata = { title: "Privacitat de l’agenda cultural" }
 export default function Privacy() {
   return (
     <main
@@ -9,14 +9,14 @@ export default function Privacy() {
       className="culture-container culture-main culture-detail culture-stack"
     >
       <Link href="/">← Agenda</Link>
-      <h1>Privacitat de l’agenda web</h1>
+      <h1>Privacitat de l’agenda cultural</h1>
       <p>
         Responsable de la iniciativa independent: {AUTHOR_NAME}. Contacte:{" "}
         <a href={`mailto:${CONTACT_EMAIL.support}`}>{CONTACT_EMAIL.support}</a>.
       </p>
       <h2>Sense compte per consultar</h2>
       <p>
-        La consulta pública no requereix registre. Aquesta versió web no envia
+        La consulta pública no requereix registre. L’agenda cultural no envia
         esdeveniments d’analítica ni sincronitza els teus favorits amb el
         servidor.
       </p>
@@ -30,8 +30,9 @@ export default function Privacy() {
       </p>
       <h2>Ubicació, mapes i imatges</h2>
       <p>
-        La ubicació només es demana si prems el botó del mapa. No es guarda ni
-        s’envia al nostre servidor. El mapa fa peticions a OpenFreeMap per la
+        La ubicació només es demana si prems el botó del mapa. Per consultar els
+        actes s’envien al servidor els límits de la zona visible, que poden
+        revelar una ubicació aproximada; l’aplicació no els desa. El mapa fa peticions a OpenFreeMap per la
         zona visible; aquestes peticions i les imatges externes poden revelar la
         teva IP i la zona consultada als proveïdors. Les rutes i les entrades
         s’obren a serveis externs amb les seves pròpies polítiques.

@@ -16,7 +16,7 @@ Agenda web responsive y PWA en Next.js. Mataró es la única ciudad visible. Las
 
 `src/features/culture/domain` contiene tipos y reglas puras; `server` contiene autorización, repositorios y escrituras; `ui` contiene componentes públicos y admin. `app` adapta rutas y acciones de Next.js.
 
-`CULTURE_CITY_ID` se resuelve exclusivamente en `server/config.ts`, nunca desde un formulario del cliente. Inicialmente un despliegue equivale a una ciudad. No hay selector, alta de ayuntamientos ni resolución real por dominio todavía. Para N ciudades, añadir un mapeo de dominios verificados en ese punto; las URLs de los actos no cambian.
+El mapa público consulta actos publicados de todas las ciudades en el área visible; permite filtrar por municipio, fiesta y día. Agrupa los puntos y carga 200 por petición: si hay más, ofrece cargar la página siguiente. El período predeterminado es de 90 días. Los detalles usan la ciudad real del acto. Las consultas se hacen como anónimo, respetando RLS; la zona visible se envía al servidor. La agenda, las propuestas y el panel siguen ligados a `CULTURE_CITY_ID`, que solo se resuelve en `server/config.ts`. Todavía no hay alta de municipios ni selección de ciudad administrativa.
 
 El repositorio público usa un cliente anónimo sin cookies incluso si el visitante es administrador. Las escrituras del editor usan su sesión y RLS. Las propuestas públicas pasan exclusivamente por una función del servidor con service key y límites en la base de datos; no se concede acceso anónimo directo a la tabla. Las claves externas compuestas impiden asociar actos y avisos a recursos de otra ciudad.
 
@@ -43,6 +43,7 @@ Aplicar en este orden usando el SQL Editor autenticado de Supabase, o el procedi
 4. `supabase/migrations/202611150004_performance.sql`: índices para la consulta pública de actos no caducados, orden estable y pertenencias por usuario.
 5. `supabase/migrations/202611150005_integrations.sql`: permisos y límites de la API municipal.
 6. `supabase/migrations/202611150006_proposals.sql`: cola privada, límites y revisión transaccional.
+7. `supabase/migrations/202611150007_multicity_map.sql`: índices de consulta geográfica y eventos públicos.
 
 Crear/invitar el primer usuario en Authentication del dashboard y establecer su contraseña mediante el flujo de Supabase. Copiar su UUID (no un token) y ejecutar en el SQL Editor: `insert into public.city_memberships (city_id, user_id, role) values ('mataro', '<UUID_DEL_USUARIO>', 'owner');`.
 
@@ -72,7 +73,7 @@ El service worker solo se registra en producción, bajo HTTPS o localhost. Compr
 - En la primera visita se prepara una copia pública con los datos ya recibidos, sin repetir la petición. Para forzar la actualización: Ajustos → Actualitzar l’agenda offline.
 - Sin red, las navegaciones públicas abren un lector sencillo con horarios, descripción, cancelación conocida y filtro de favoritos. Siempre identifica la copia y su fecha.
 - No se cachean páginas admin, acciones, cookies, respuestas RSC, mapas ni imágenes. Los datos antiguos pueden conservar contenido posteriormente retirado: offline no garantiza revocación instantánea ni avisos actualizados.
-- MapLibre y OpenFreeMap requieren red. La ubicación solo se solicita al pulsar el botón y no se guarda en el servidor.
+- MapLibre y OpenFreeMap requieren red. La ubicación solo se solicita al pulsar el botón; la consulta envía al servidor los límites visibles del mapa, que pueden revelar una ubicación aproximada. El endpoint no almacena la ubicación ni cachea las consultas del mapa; revisar también los registros del proveedor de alojamiento antes de publicar.
 - iOS: Compartir → Añadir a pantalla de inicio. Android: menú del navegador → Instalar. No hay sincronización de favoritos entre dispositivos.
 - `node scripts/generate-culture-icons.mjs` regenera los PNG desde el SVG usando sharp, ya incluido por Next.js.
 
@@ -81,7 +82,9 @@ El service worker solo se registra en producción, bajo HTTPS o localhost. Compr
 - `node --test tests/*.test.*`: reglas de fechas/DST, modo fiesta, búsqueda, cancelaciones, validación, ICS, concurrencia, refresco e aislamiento de caché del service worker.
 - `pnpm typecheck`, `pnpm lint`, `pnpm build`.
 - Después del build, `node scripts/check-culture-http.mjs --start` inicia un servidor local en el puerto 3107, ejecuta 28 comprobaciones HTTP y lo cierra. Verifica rutas, cabeceras de caché, manifiesto, iconos y entradas inválidas; no sustituye una prueba interactiva en navegador.
+- `node scripts/check-multicity-map.mjs`: comprueba localmente el endpoint del mapa, parámetros y paginación usando un servidor Supabase simulado; no verifica PostgreSQL ni RLS.
 - `supabase/tests/culture-rls.sql`: comprobación transaccional de permisos con dos ciudades; ejecutar solo en una base de desarrollo migrada. Termina en rollback. No se ha podido ejecutar aquí al no haber PostgreSQL/Docker ni un proyecto Supabase autorizado.
+- `supabase/tests/culture-proposals.sql`: comprueba aislamiento de ciudades, acceso anónimo, límites y aceptación/rechazo. Ejecutar solo en una base de desarrollo migrada; termina en rollback.
 - `node scripts/check-culture-load.mjs`: build aislado en `.next-culture-load` y carga local acotada con 1.000 actos sintéticos. Comprueba consultas reales del repositorio contra un servidor HTTP simulado, no PostgreSQL/RLS. No modifica `.next` ni conecta Supabase. Detalles y límites en [CULTURE-PERFORMANCE.md](./CULTURE-PERFORMANCE.md).
 
 Antes de publicar, probar en dispositivos reales: Safari iOS instalado, Android instalado, primera visita, avión tras carga, favorito tras recarga, acto nocturno, denegación de ubicación, cancelación actualizada y acceso de un usuario sin pertenencia. Los tests de worker se ejecutan en un entorno simulado, no sustituyen esta prueba de navegador.

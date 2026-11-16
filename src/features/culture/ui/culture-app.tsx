@@ -18,7 +18,7 @@ import { useCatalog } from "./use-catalog"
 import { CalendarDotsIcon, LightningIcon, MapTrifoldIcon, HeartIcon, GearSixIcon } from "@phosphor-icons/react"
 import { cultureNavigation } from "../../../../../shared/culture/presentation"
 
-const EventMap = dynamic(() => import("./event-map"), {
+const EventMap = dynamic(() => import("./multicity-map"), {
   ssr: false,
   loading: () => <p>Carregant el mapa…</p>,
 })
@@ -65,7 +65,7 @@ function CultureContent({
     return () => { clearTimeout(initialTick); clearInterval(timer) }
   }, [])
   const today = dayKey(now, data?.city.timezone)
-  const festival = resolveFestival(
+  const festival = view === "map" ? null : resolveFestival(
     data?.festivals ?? [],
     preferences.mode,
     today
@@ -90,22 +90,22 @@ function CultureContent({
     ]
   )
   const liveNow = view === "now" ? now : null
+  const timezone = data?.city.timezone
   const events = useMemo(
     () =>
       filtered.filter((event) => {
         if (liveNow) return isLive(event, liveNow)
         if (!selectedDay) return true
         return (
-          dayKey(event.starts_at, data?.city.timezone) <= selectedDay &&
+          dayKey(event.starts_at, timezone) <= selectedDay &&
           dayKey(
             new Date(new Date(event.ends_at).getTime() - 1),
-            data?.city.timezone
+            timezone
           ) >= selectedDay
         )
       }),
-    [filtered, liveNow, selectedDay, data?.city.timezone]
+    [filtered, liveNow, selectedDay, timezone]
   )
-  const mapEvents = useMemo(() => events.slice(0, 200), [events])
   const titles = {
     agenda: "Què fem a Mataró?",
     now: "Està passant ara",
@@ -132,7 +132,7 @@ function CultureContent({
       <header className="culture-header">
         <div className="culture-container culture-row culture-between">
           <Link href="/" className="culture-brand">
-            {festival?.name ?? "Mataró · Cultura"}
+            {view === "map" ? "Agenda cultural" : festival?.name ?? "Mataró · Cultura"}
           </Link>
           <Link href="/admin" className="culture-meta">
             Administració
@@ -160,7 +160,7 @@ function CultureContent({
       <main id="main-content" className="culture-container culture-main">
         <section className="culture-intro">
           <p className="culture-meta">
-            Tot l’any, a prop teu · {data?.city.name ?? "Mataró"}
+            Tot l’any, a prop teu · {view === "map" ? "Catalunya" : data?.city.name ?? "Mataró"}
           </p>
           <h1>{titles[view]}</h1>
           <p>
@@ -282,6 +282,8 @@ function CultureContent({
               <Link href="/legal/privacitat">Privacitat</Link>
             </section>
           </div>
+        ) : view === "map" ? (
+          <EventMap from={dayKey(now)} locale={preferences.locale} />
         ) : (
           <>
             <form
@@ -350,19 +352,6 @@ function CultureContent({
               <p className="culture-meta">
                 Les exposicions i activitats de llarga durada es mostren a
                 l’agenda, no com a actes en directe.
-              </p>
-            )}
-            {view === "map" && data && (
-              <EventMap
-                catalog={data}
-                events={mapEvents}
-                locale={preferences.locale}
-              />
-            )}
-            {view === "map" && events.length > 200 && (
-              <p>
-                El mapa mostra els primers 200 actes. Filtra per dia per veure’n
-                més.
               </p>
             )}
             <div aria-busy={pending} className="culture-grid">
@@ -446,7 +435,7 @@ function CultureContent({
           </>
         )}
         <footer className="culture-footer">
-          <p>Mataró · Cultura · Iniciativa independent</p>
+          <p>{view === "map" ? "Agenda cultural" : "Mataró · Cultura"} · Iniciativa independent</p>
           <div className="culture-row">
             <Link href="/proposa">Proposa un acte</Link>
             <Link href="/legal/privacitat">Privacitat</Link>

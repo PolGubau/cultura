@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import type { CultureCatalog } from "../domain/types"
+import { registerCultureServiceWorker } from "./service-worker"
 
 export function PwaRegistration({
   catalog,
@@ -9,11 +10,7 @@ export function PwaRegistration({
   catalog: CultureCatalog | null
 }) {
   useEffect(() => {
-    if (process.env.NODE_ENV === "production" && "serviceWorker" in navigator) {
-      navigator.serviceWorker
-        .register("/sw.js", { scope: "/", updateViaCache: "none" })
-        .catch(() => {})
-    }
+    registerCultureServiceWorker()
   }, [])
   useEffect(() => {
     if (

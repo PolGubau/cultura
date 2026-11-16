@@ -2,6 +2,7 @@ import { APP_CITY, APP_DATES, APP_NAME, APP_YEAR, PLAY_STORE_URL } from "@/lib/c
 import { ArrowDownIcon, LightningIcon, MapPinIcon } from "@phosphor-icons/react/dist/ssr"
 import Image from "next/image"
 import Link from "next/link"
+import { InstallButton } from "@/src/features/culture/ui/install-button"
 
 export function Hero() {
   return (
@@ -61,6 +62,11 @@ export function Hero() {
             <strong className="text-foreground">{APP_NAME} de {APP_CITY}</strong>. Decideix en
             segons on anar.
           </p>
+
+          <div>
+            <p className="mb-3 text-sm text-muted-foreground">La nova agenda cultural, també al teu dispositiu:</p>
+            <InstallButton />
+          </div>
 
           <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
             <button

@@ -23,7 +23,8 @@ insert into public.city_events (id, city_id, place_id, category_id, translations
   ('93000000-0000-4000-8000-000000000001', 'culture-test-a', '91000000-0000-4000-8000-000000000001', 'test', '{"ca":{"title":"Public A","summary":"Test"}}', now(), now() + interval '1 hour', 'published', null),
   ('93000000-0000-4000-8000-000000000002', 'culture-test-a', '91000000-0000-4000-8000-000000000001', 'test', '{"ca":{"title":"Draft A","summary":"Test"}}', now(), now() + interval '1 hour', 'draft', null),
   ('93000000-0000-4000-8000-000000000003', 'culture-test-a', '91000000-0000-4000-8000-000000000001', 'test', '{"ca":{"title":"Hidden by festival","summary":"Test"}}', now(), now() + interval '1 hour', 'published', '92000000-0000-4000-8000-000000000001'),
-  ('93000000-0000-4000-8000-000000000004', 'culture-test-b', '91000000-0000-4000-8000-000000000002', 'test', '{"ca":{"title":"Draft B","summary":"Test"}}', now(), now() + interval '1 hour', 'draft', null);
+  ('93000000-0000-4000-8000-000000000004', 'culture-test-b', '91000000-0000-4000-8000-000000000002', 'test', '{"ca":{"title":"Draft B","summary":"Test"}}', now(), now() + interval '1 hour', 'draft', null),
+  ('93000000-0000-4000-8000-000000000005', 'culture-test-b', '91000000-0000-4000-8000-000000000002', 'test', '{"ca":{"title":"Public B","summary":"Test"}}', now(), now() + interval '1 hour', 'published', null);
 insert into public.city_announcements (city_id, title, message, starts_at, ends_at, publication) values
   ('culture-test-a', 'Active', 'Test', now() - interval '1 hour', now() + interval '1 hour', 'published'),
   ('culture-test-a', 'Expired', 'Test', now() - interval '2 hours', now() - interval '1 hour', 'published'),
@@ -32,8 +33,12 @@ insert into public.city_announcements (city_id, title, message, starts_at, ends_
 set local role anon;
 do $$
 begin
-  if (select count(*) from public.city_events where city_id like 'culture-test-%') <> 1 then
+  if (select count(*) from public.city_events where city_id like 'culture-test-%') <> 2 then
     raise exception 'Anonymous can see drafts or an event belonging to a draft festival';
+  end if;
+  if (select count(*) from public.city_events e join public.city_places p on p.city_id = e.city_id and p.id = e.place_id
+      where e.city_id like 'culture-test-%' and p.latitude between 40 and 43 and p.longitude between 1 and 4) <> 2 then
+    raise exception 'Public map did not include both cities or exposed hidden events';
   end if;
   if (select count(*) from public.city_announcements where city_id = 'culture-test-a') <> 1 then
     raise exception 'Announcement time window is not enforced';
@@ -58,7 +63,7 @@ begin
   if (select count(*) from public.city_events where city_id = 'culture-test-a') <> 3 then
     raise exception 'Editor cannot see own drafts';
   end if;
-  if exists(select 1 from public.city_events where city_id = 'culture-test-b') then
+  if exists(select 1 from public.city_events where city_id = 'culture-test-b' and publication = 'draft') then
     raise exception 'Editor can read another city draft';
   end if;
   if (select count(*) from public.city_memberships) <> 1 then

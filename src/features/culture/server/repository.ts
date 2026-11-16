@@ -6,7 +6,7 @@ import { addDays, dayKey, toUtc, validDay } from "../domain/time"
 import type { CatalogResult, City, CultureCatalog } from "../domain/types"
 import { cachePublicJson } from "./public-cache"
 
-const fields = {
+export const fields = {
   city: "id,name,timezone,latitude,longitude",
   categories: "id,name",
   places: "id,name,address,latitude,longitude",
@@ -18,7 +18,7 @@ const fields = {
     "id,festival_id,title,message,severity,starts_at,ends_at,publication",
 } as const
 
-function anonymousClient() {
+export function anonymousClient() {
   return publicClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
@@ -44,7 +44,8 @@ function anonymousClient() {
 
 async function queryCatalog(
   fromInput?: string,
-  admin = false
+  admin = false,
+  cityId = CITY_ID
 ): Promise<CatalogResult> {
   if (!hasDatabase())
     return {
@@ -56,7 +57,7 @@ async function queryCatalog(
   const { data: city, error: cityError } = await db
     .from("cities")
     .select(fields.city)
-    .eq("id", CITY_ID)
+    .eq("id", cityId)
     .single()
   if (cityError || !city)
     return {
@@ -73,7 +74,7 @@ async function queryCatalog(
   let eventQuery = db
     .from("city_events")
     .select(fields.events)
-    .eq("city_id", CITY_ID)
+    .eq("city_id", cityId)
     .gt("ends_at", start)
     .lt("starts_at", end)
     .order("starts_at")
@@ -82,12 +83,12 @@ async function queryCatalog(
   let festivalsQuery = db
     .from("city_festivals")
     .select(fields.festivals)
-    .eq("city_id", CITY_ID)
+    .eq("city_id", cityId)
     .order("starts_on", { ascending: false })
   let announcementQuery = db
     .from("city_announcements")
     .select(fields.announcements)
-    .eq("city_id", CITY_ID)
+    .eq("city_id", cityId)
     .order("starts_at", { ascending: false })
     .limit(100)
   if (!admin) {
@@ -100,12 +101,12 @@ async function queryCatalog(
       db
         .from("city_categories")
         .select(fields.categories)
-        .eq("city_id", CITY_ID)
+        .eq("city_id", cityId)
         .order("name"),
       db
         .from("city_places")
         .select(fields.places)
-        .eq("city_id", CITY_ID)
+        .eq("city_id", cityId)
         .order("name"),
       festivalsQuery,
       eventQuery,
@@ -170,7 +171,6 @@ const cachedEvent = cachePublicJson("culture-event-v1", async (id) => {
   const { data, error } = await anonymousClient()
     .from("city_events")
     .select(fields.events)
-    .eq("city_id", CITY_ID)
     .eq("id", id)
     .eq("publication", "published")
     .maybeSingle()
@@ -190,13 +190,21 @@ export async function loadPublicEvent(id: string) {
 export async function loadEventContext(id: string) {
   const event = await loadPublicEvent(id)
   if (!event) return null
-  const result = await loadCatalog(
-    dayKey(event.starts_at, FALLBACK_CITY.timezone)
-  )
+  const result = await queryCatalog(dayKey(event.starts_at, FALLBACK_CITY.timezone), false, event.city_id)
   if (!result.data) throw new Error("No es pot carregar el context de l’acte.")
+  // Related resources can be beyond PostgREST's catalog row limit.
+  const db = anonymousClient()
+  const [place, festival] = await Promise.all([
+    db.from("city_places").select(fields.places).eq("city_id", event.city_id).eq("id", event.place_id).single(),
+    event.festival_id ? db.from("city_festivals").select(fields.festivals).eq("city_id", event.city_id).eq("id", event.festival_id).eq("publication", "published").single() : Promise.resolve({ data: null, error: null }),
+  ])
+  if (place.error || festival.error) throw new Error("No es pot carregar el context de l’acte.")
   // Include a directly linked event even if a busy 90-day window exceeds the list limit.
   const events = result.data.events.some((item) => item.id === event.id)
     ? result.data.events
     : [...result.data.events, event]
-  return { event, catalog: { ...result.data, events } }
+  return { event, catalog: { ...result.data, events,
+    places: place.data ? [...result.data.places.filter((item) => item.id !== event.place_id), place.data] : result.data.places,
+    festivals: festival.data ? [...result.data.festivals.filter((item) => item.id !== event.festival_id), festival.data] : result.data.festivals,
+  } as CultureCatalog }
 }
