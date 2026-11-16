@@ -21,7 +21,7 @@ const CENTER_LAT = 41.5378;
 declare const process: { env: Record<string, string | undefined> };
 const MAPTILER_KEY = process.env.EXPO_PUBLIC_MAPTILER_KEY ?? '';
 
-function buildHtml(isDark: boolean, maptilerKey: string) {
+function buildHtml(isDark: boolean, maptilerKey: string, multiCity: boolean) {
   return `<!DOCTYPE html>
 <html>
 <head>
@@ -198,8 +198,8 @@ let _styleFailed = false;
 let _offlineNotified = false;
 const map = new maplibregl.Map({
   container:'map', style:STYLE_PRIMARY,
-  center:[${CENTER_LNG}, ${CENTER_LAT}], zoom:14.5, minZoom:12, maxZoom:19,
-  maxBounds:[[2.37,41.49],[2.53,41.59]], attributionControl:false,
+  center:${multiCity ? '[1.7,41.75]' : `[${CENTER_LNG},${CENTER_LAT}]`}, zoom:${multiCity ? 7 : 14.5}, minZoom:${multiCity ? 3 : 12}, maxZoom:19,
+  ${multiCity ? 'renderWorldCopies:false, maxBounds:[[-180,-85],[180,85]],' : 'maxBounds:[[2.37,41.49],[2.53,41.59]],'} attributionControl:false,
 });
 map.on('error', (e) => {
   // Catch both network failures (no status) and HTTP errors (status >= 400)
@@ -581,7 +581,12 @@ function renderEvents(events) {
   tickLive();
 }
 
-map.on('moveend', renderClusters);
+function sendViewport() {
+  if (!${multiCity}) return;
+  const b = map.getBounds();
+  post({ type:'VIEWPORT', bounds: { west:Math.max(-180,b.getWest()), south:Math.max(-90,b.getSouth()), east:Math.min(180,b.getEast()), north:Math.min(90,b.getNorth()) } });
+}
+map.on('moveend', () => { renderClusters(); sendViewport(); });
 
 // ── Selection ─────────────────────────────────────────────────────────────────
 function selectEvent(id) {
@@ -654,6 +659,7 @@ map.on('style.load', () => {
   if (!_mapReady) {
     _mapReady = true;
     post({ type:'MAP_READY' });
+    sendViewport();
   }
   if (_pending) { renderEvents(_pending); _pending = null; }
   else if (_scLoaded) { renderClusters(); tickLive(); }
@@ -687,6 +693,8 @@ export interface EventMapHandle {
 
 interface Props {
   events: Event[];
+  multiCity?: boolean;
+  onViewportChange?: (bounds: { west: number; south: number; east: number; north: number }) => void;
   onEventPress?: (event: Event) => void;
   onClusterPress?: (events: Event[]) => void;
   /** Called once when both tile sources fail and the map cannot be displayed. */
@@ -694,7 +702,7 @@ interface Props {
 }
 
 export const EventMap = memo(forwardRef<EventMapHandle, Props>(function EventMap(
-  { events, onEventPress, onClusterPress, onOffline },
+  { events, onEventPress, onClusterPress, onOffline, multiCity = false, onViewportChange },
   ref,
 ) {
   const webviewRef = useRef<WebView>(null);
@@ -712,8 +720,8 @@ export const EventMap = memo(forwardRef<EventMapHandle, Props>(function EventMap
   // useLocalMapAssets copies MapLibre + Supercluster from the app bundle to the
   // device cache dir, writes the HTML next to them, and returns a file:// URI.
   // This makes the map work fully offline (tiles still need internet).
-  const htmlContent = useRef(buildHtml(false, MAPTILER_KEY)).current;
-  const localHtmlUri = useLocalMapAssets(htmlContent);
+  const htmlContent = useRef(buildHtml(false, MAPTILER_KEY, multiCity)).current;
+  const localHtmlUri = useLocalMapAssets(htmlContent, multiCity);
 
   const injectFocus = useCallback((id: string) => {
     const js = `window.focusOnEvent(${JSON.stringify(id)}, ${JSON.stringify(eventsRef.current)}); true;`;
@@ -840,6 +848,8 @@ export const EventMap = memo(forwardRef<EventMapHandle, Props>(function EventMap
         // In dev, sync the WebView clock to the frozen app date so mobile
         // event positions (cercaviles, correfocs…) are shown correctly
         // Dev fake-time is injected atomically in the updateEvents useEffect below.
+      } else if (data.type === 'VIEWPORT' && onViewportChange) {
+        onViewportChange(data.bounds);
       } else if (data.type === 'EVENT_PRESS' && onEventPress) {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         onEventPress(data.event as Event);
@@ -855,7 +865,7 @@ export const EventMap = memo(forwardRef<EventMapHandle, Props>(function EventMap
         }).start();
       }
     } catch { /* ignore */ }
-  }, [loaderOpacity, onEventPress, onClusterPress]);
+  }, [loaderOpacity, onEventPress, onClusterPress, onViewportChange]);
 
   return (
     <View style={styles.map}>

@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { FlatList, ScrollView, Text, TextInput, View } from 'react-native';
+import { Alert, FlatList, Linking, ScrollView, Text, TextInput, View } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
@@ -21,6 +21,7 @@ export function CultureScreen({ view }: { view: CultureView }) {
       (dayKey(event.starts_at, data?.city.timezone) <= day && dayKey(new Date(Date.parse(event.ends_at) - 1), data?.city.timezone) >= day)),
     [data, festival?.id, query, category, preferences, view, now, day]);
   const days = useMemo(() => [...new Set((data?.events ?? []).map((event) => dayKey(event.starts_at, data?.city.timezone)))], [data]);
+  if (view === 'map') return <SafeAreaView edges={['top', 'left', 'right']} style={styles.screen}><ScrollView contentContainerStyle={styles.content}><Text accessibilityRole="header" style={styles.title}>{titles.map}</Text><CultureMap /></ScrollView></SafeAreaView>;
   const header = <View style={styles.header}>
     <Text style={styles.brand}>{festival?.name ?? 'Mataró · Cultura'}</Text>
     <Text style={styles.meta}>Tot l’any, a prop teu · {data?.city.name ?? 'Mataró'}</Text>
@@ -42,7 +43,6 @@ export function CultureScreen({ view }: { view: CultureView }) {
         {days.map((item) => <Button key={item} title={item} selected={day === item} onPress={() => setDay(item)} />)}
       </ScrollView>}
       {view === 'now' && <Text style={styles.meta}>Les exposicions es mostren a l’agenda, no com a actes en directe.</Text>}
-      {view === 'map' && data && <CultureMap events={events} />}
     </>}
   </View>;
   if (view === 'settings') return <SafeAreaView edges={['top', 'left', 'right']} style={styles.screen}><ScrollView contentContainerStyle={styles.content}>
@@ -57,8 +57,21 @@ export function CultureScreen({ view }: { view: CultureView }) {
     </View>
     <View style={styles.card}><Text style={styles.heading}>Sense connexió</Text><Text style={styles.body}>L’agenda consultada es desa automàticament. Els mapes i les imatges necessiten connexió.</Text>
       <Button title="Actualitzar agenda" onPress={() => void refresh()} disabled={pending} />
+      <Button title="Proposa un acte" onPress={() => {
+        try {
+          const url = new URL('/proposa', process.env.EXPO_PUBLIC_CULTURE_API_URL);
+          if (url.protocol !== 'https:' || url.username || url.password) throw new Error();
+          void Linking.openURL(url.toString()).catch(() => Alert.alert('Enllaç no disponible', 'Torna-ho a provar més tard.'));
+        } catch { Alert.alert('Enllaç no disponible', 'Configura la URL segura de l’agenda.'); }
+      }} />
       <Text style={styles.meta}>Iniciativa independent. Encara no és un servei oficial de l’Ajuntament.</Text>
-      <Button title="Privacitat" onPress={() => router.push('/privacy')} />
+      <Button title="Privacitat" onPress={() => {
+        try {
+          const url = new URL('/legal/privacitat', process.env.EXPO_PUBLIC_CULTURE_API_URL);
+          if (url.protocol !== 'https:' || url.username || url.password) throw new Error();
+          void Linking.openURL(url.toString()).catch(() => Alert.alert('Enllaç no disponible', 'Torna-ho a provar més tard.'));
+        } catch { Alert.alert('Enllaç no disponible', 'Configura la URL segura de l’agenda.'); }
+      }} />
     </View>
   </ScrollView></SafeAreaView>;
   return <SafeAreaView edges={['top', 'left', 'right']} style={styles.screen}>

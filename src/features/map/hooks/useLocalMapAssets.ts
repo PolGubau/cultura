@@ -61,9 +61,9 @@ async function ensureAssetsDownloaded(): Promise<string> {
 	return mapDir;
 }
 
-async function prepareMapAssets(htmlContent: string): Promise<string> {
+async function prepareMapAssets(htmlContent: string, multiCity: boolean): Promise<string> {
 	const mapDir = await ensureAssetsDownloaded();
-	const htmlUri = `${mapDir}index.html`;
+	const htmlUri = `${mapDir}${multiCity ? 'culture-map.html' : 'index.html'}`;
 	await FileSystem.writeAsStringAsync(htmlUri, htmlContent, {
 		encoding: FileSystem.EncodingType.UTF8,
 	});
@@ -79,11 +79,11 @@ async function prepareMiniMapAssets(htmlContent: string): Promise<string> {
 	return htmlUri;
 }
 
-export function useLocalMapAssets(htmlContent: string): string | null {
+export function useLocalMapAssets(htmlContent: string, multiCity = false): string | null {
 	const [htmlUri, setHtmlUri] = useState<string | null>(null);
 
 	useEffect(() => {
-		prepareMapAssets(htmlContent)
+		prepareMapAssets(htmlContent, multiCity)
 			.then(setHtmlUri)
 			.catch((err) => console.error("[useLocalMapAssets]", err));
 		// htmlContent is a stable module-level constant — safe to omit from deps
