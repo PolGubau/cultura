@@ -9,6 +9,7 @@ Agenda web responsive y PWA en Next.js. Mataró es la única ciudad visible. Las
 - Fiesta publicada con logo, color, prioridad y activación automática por fechas inclusivas en la zona horaria de la ciudad. También puede elegirse manualmente.
 - Admin: lugares reutilizables, categorías, fiestas, actos manuales, traducciones, borrador/publicación, cancelación con motivo, duplicación como borrador y avisos con caducidad.
 - Exportación ICS y compartir mediante las funciones disponibles del navegador.
+- Propuestas anónimas para Mataró: se revisan en `/admin/proposals`; aceptar crea el acto publicado en la misma transacción. Android abre el formulario web.
 - La antigua landing queda en `/santes-2026`. Expo es ahora otro cliente nativo del mismo catálogo, con dominio y SDK en `../shared/culture`. Configuración y API municipal: [CULTURE-INTEGRATIONS.md](./CULTURE-INTEGRATIONS.md).
 
 ## Arquitectura
@@ -17,7 +18,7 @@ Agenda web responsive y PWA en Next.js. Mataró es la única ciudad visible. Las
 
 `CULTURE_CITY_ID` se resuelve exclusivamente en `server/config.ts`, nunca desde un formulario del cliente. Inicialmente un despliegue equivale a una ciudad. No hay selector, alta de ayuntamientos ni resolución real por dominio todavía. Para N ciudades, añadir un mapeo de dominios verificados en ese punto; las URLs de los actos no cambian.
 
-El repositorio público usa un cliente anónimo sin cookies incluso si el visitante es administrador. Las escrituras usan la sesión del editor y RLS; no usan una service key. Las claves externas compuestas impiden asociar actos y avisos a recursos de otra ciudad.
+El repositorio público usa un cliente anónimo sin cookies incluso si el visitante es administrador. Las escrituras del editor usan su sesión y RLS. Las propuestas públicas pasan exclusivamente por una función del servidor con service key y límites en la base de datos; no se concede acceso anónimo directo a la tabla. Las claves externas compuestas impiden asociar actos y avisos a recursos de otra ciudad.
 
 ## Instalación local
 
@@ -40,6 +41,8 @@ Aplicar en este orden usando el SQL Editor autenticado de Supabase, o el procedi
 2. `supabase/migrations/202611150002_permissions.sql`: permisos y Row Level Security (RLS, filtrado de filas en la base de datos).
 3. `supabase/migrations/202611150003_mataro.sql`: Mataró y categorías iniciales. Sin actos de prueba ni fechas inventadas de Santes 2027.
 4. `supabase/migrations/202611150004_performance.sql`: índices para la consulta pública de actos no caducados, orden estable y pertenencias por usuario.
+5. `supabase/migrations/202611150005_integrations.sql`: permisos y límites de la API municipal.
+6. `supabase/migrations/202611150006_proposals.sql`: cola privada, límites y revisión transaccional.
 
 Crear/invitar el primer usuario en Authentication del dashboard y establecer su contraseña mediante el flujo de Supabase. Copiar su UUID (no un token) y ejecutar en el SQL Editor: `insert into public.city_memberships (city_id, user_id, role) values ('mataro', '<UUID_DEL_USUARIO>', 'owner');`.
 
@@ -53,8 +56,13 @@ En `/admin`: crear lugar → revisar categorías → crear fiesta opcional → c
 - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`: clave pública del mismo proyecto. Nunca una service-role/secret key.
 - `CULTURE_CITY_ID`: `mataro` por defecto. Solo servidor.
 - `NEXT_PUBLIC_SITE_URL`: origen HTTPS definitivo para metadatos, canonical y sitemap. El fallback conserva el dominio histórico hasta decidir la marca.
+- `SUPABASE_SERVICE_KEY`: clave secreta de servicio, solo servidor, necesaria para recibir propuestas; nunca `NEXT_PUBLIC`.
+- `PROPOSAL_HASH_SECRET`: secreto aleatorio de al menos 32 caracteres, solo servidor, para seudonimizar IP en el límite de envío.
+- `PROPOSALS_TRUST_VERCEL_IP=1`: activar únicamente en Vercel tras verificar que su proxy sobrescribe `x-vercel-forwarded-for`; sin esta configuración las propuestas se deshabilitan en producción. En desarrollo el límite se comparte localmente.
 
-El nuevo panel no necesita `SUPABASE_SERVICE_ROLE_KEY` ni `FESTIVAL_ID`. Las mutaciones antiguas están deshabilitadas y las rutas de analítica/feedback ya no consultan datos privados históricos. Esto no repara las políticas del proyecto Supabase antiguo: sus permisos excesivos deben corregirse de forma independiente si sigue activo.
+El panel de administración no necesita una service key; la recepción anónima sí requiere `SUPABASE_SERVICE_KEY` en el servidor. No usa `FESTIVAL_ID`. Las mutaciones antiguas están deshabilitadas y las rutas de analítica/feedback ya no consultan datos privados históricos. Esto no repara las políticas del proyecto Supabase antiguo: sus permisos excesivos deben corregirse de forma independiente si sigue activo.
+
+Las propuestas se limitan a cinco por IP y 100 por ciudad y hora; no es un CAPTCHA ni una protección completa frente a ataques distribuidos. El hash de IP se guarda solo para el límite y las entradas caducadas se limpian gradualmente al recibir propuestas. Configurar también protección perimetral y revisar retención, privacidad y moderación antes de abrirlo al público. No se recoge correo ni se envían notificaciones.
 
 ## Offline e instalación
 

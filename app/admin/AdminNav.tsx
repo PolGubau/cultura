@@ -14,6 +14,7 @@ type NavLink = { href: string; label: string; Icon: PhosphorIcon }
 
 const NAV_LINKS: NavLink[] = [
   { href: "/admin/events", label: "Esdeveniments", Icon: CalendarIcon },
+  { href: "/admin/proposals", label: "Propostes", Icon: CalendarIcon },
   { href: "/admin/announcements", label: "Avisos", Icon: MegaphoneIcon },
   { href: "/admin/festivals", label: "Festes", Icon: CalendarIcon },
   { href: "/admin/places", label: "Llocs", Icon: CalendarIcon },

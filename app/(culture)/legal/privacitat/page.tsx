@@ -38,6 +38,13 @@ export default function Privacy() {
       </p>
       <h2>Administració i infraestructura</h2>
       <p>
+        Les propostes d’actes s’envien sense compte i es guarden per a la seva
+        revisió. No demanem correu de contacte. No hi incloguis dades personals
+        que no vulguis publicar. Per limitar abusos es conserva temporalment una
+        empremta pseudònima de la IP; les entrades caducades es netegen amb nous
+        enviaments. Contacta amb el responsable per sol·licitar-ne la retirada.
+      </p>
+      <p>
         Només les persones convidades poden editar. Supabase gestiona la seva
         autenticació i les galetes tècniques de sessió. L’allotjament i el
         servidor poden tractar IP i registres tècnics per prestar i protegir el

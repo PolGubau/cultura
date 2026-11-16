@@ -2,25 +2,29 @@
 
 import { useActionState } from "react"
 import { saveCulture, copyCultureEvent } from "../server/actions"
+import { reviewProposal } from "../server/proposal-actions"
 import type { ActionResult } from "../domain/types"
 
 export function EntityForm({
   entity,
   id,
   children,
+  proposalId,
 }: {
   entity: string
   id?: string
   children: React.ReactNode
+  proposalId?: string
 }) {
   const [state, action, pending] = useActionState<ActionResult, FormData>(
-    saveCulture,
+    proposalId ? reviewProposal : saveCulture,
     {}
   )
   return (
     <form action={action} className="culture-stack">
       <input type="hidden" name="entity" value={entity} />
       <input type="hidden" name="id" value={state.id ?? id ?? ""} />
+      {proposalId && <><input type="hidden" name="proposal_id" value={proposalId} /><input type="hidden" name="decision" value="accept" /></>}
       <fieldset disabled={pending} className="culture-stack">
         {children}
       </fieldset>
@@ -34,14 +38,14 @@ export function EntityForm({
           <p>{state.success}</p>
           <a
             className="culture-button culture-quiet"
-            href={`/admin/${entity === "event" ? "events" : entity === "festival" ? "festivals" : entity === "place" ? "places" : entity === "category" ? "categories" : "announcements"}`}
+            href={proposalId ? "/admin/proposals" : `/admin/${entity === "event" ? "events" : entity === "festival" ? "festivals" : entity === "place" ? "places" : entity === "category" ? "categories" : "announcements"}`}
           >
-            Crear un altre registre
+            {proposalId ? "Tornar a les propostes" : "Crear un altre registre"}
           </a>
         </div>
       )}
-      <button className="culture-button" type="submit" disabled={pending}>
-        {pending ? "Desant…" : "Desar"}
+      <button className="culture-button" type="submit" disabled={pending || Boolean(proposalId && state.success)}>
+        {pending ? "Desant…" : proposalId ? "Acceptar i publicar" : "Desar"}
       </button>
     </form>
   )

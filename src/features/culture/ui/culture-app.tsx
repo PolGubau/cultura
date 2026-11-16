@@ -448,6 +448,7 @@ function CultureContent({
         <footer className="culture-footer">
           <p>Mataró · Cultura · Iniciativa independent</p>
           <div className="culture-row">
+            <Link href="/proposa">Proposa un acte</Link>
             <Link href="/legal/privacitat">Privacitat</Link>
             <Link href="/contacte">Contacte</Link>
             <Link href="/santes-2026">App de 2026</Link>

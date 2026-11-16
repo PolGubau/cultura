@@ -5,12 +5,14 @@ import { EntityForm, Field, SelectField, PublicationField } from "./admin-form"
 export function EventEditor({
   event,
   catalog,
+  proposalId,
 }: {
   event?: CulturalEvent
   catalog: CultureCatalog
+  proposalId?: string
 }) {
   return (
-    <EntityForm entity="event" id={event?.id}>
+    <EntityForm entity="event" id={proposalId ? undefined : event?.id} proposalId={proposalId}>
       <p>
         Horaris de {catalog.city.name} ({catalog.city.timezone}). L’acte només
         és públic si també ho és la festa associada.
@@ -163,7 +165,7 @@ export function EventEditor({
         </div>
       </details>
       <div className="culture-form-grid">
-        <PublicationField value={event?.publication} />
+        {proposalId ? <input type="hidden" name="publication" value="published" /> : <PublicationField value={event?.publication} />}
         <SelectField
           name="status"
           label="Estat de l’acte"
