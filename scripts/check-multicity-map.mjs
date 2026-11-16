@@ -19,6 +19,9 @@ const upstream = createServer((request, response) => {
     response.end(JSON.stringify(rows))
   } else if (url.pathname.endsWith("/cities")) {
     response.end(JSON.stringify(["girona", "mataro"].map((id) => ({ id, name: id, timezone: "Europe/Madrid", latitude: 41, longitude: 2 }))))
+  } else if (url.pathname.endsWith("/city_announcements")) {
+    const cityId = url.searchParams.get("city_id")?.replace("eq.", "") ?? "girona"
+    response.end(JSON.stringify([{ id: "notice", city_id: cityId, festival_id: null, title: "Avís", message: "", severity: "info", starts_at: "2027-07-01T00:00:00Z", ends_at: "2027-07-02T00:00:00Z", publication: "published" }]))
   } else if (url.pathname.endsWith("/city_events")) {
     const offset = Number(url.searchParams.get("offset") ?? 0)
     const city = url.searchParams.get("city_id")?.replace("eq.", "")
@@ -63,12 +66,14 @@ try {
   const catalog = (await (await fetch(new URL("/api/culture?from=2027-07-01", origin))).json()).data
   assert.equal(catalog.events.length, 1000)
   assert.equal(catalog.nextOffset, 1000)
+  assert.equal(catalog.announcements[0].city_id, "girona")
   assert.deepEqual(new Set(catalog.categories.map((item) => item.city_id)), new Set(["mataro", "girona"]))
   const catalogPage = await fetch(new URL("/api/culture?from=2027-07-01&city=girona&offset=1000", origin))
   assert.equal(catalogPage.status, 200)
   const page = (await catalogPage.json()).data
   assert.equal(page.selectedCity, "girona")
   assert.equal(page.events[0].city_id, "girona")
+  assert.equal(page.announcements[0].city_id, "girona")
   assert.equal(page.nextOffset, null)
   const catalogQuery = requests.findLast((item) => item.pathname.endsWith("/city_events"))
   assert.equal(catalogQuery.searchParams.get("city_id"), "eq.girona")

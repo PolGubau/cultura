@@ -18,6 +18,8 @@ Agenda web responsive y PWA en Next.js para los municipios disponibles en la bas
 
 La agenda consulta todos los municipios disponibles por defecto y permite filtrar por municipio. Carga páginas de 1.000 actos durante un período de 90 días; la búsqueda, favoritos y filtros se aplican a los actos ya cargados, y se avisa cuando quedan páginas pendientes. El mapa consulta actos publicados del área visible y permite filtrar por municipio, fiesta y día. Agrupa los puntos y carga 200 por petición, con un aviso y opción de cargar más. La zona visible se envía al servidor. Los detalles usan la ciudad real del acto y las consultas públicas se hacen como anónimo, respetando RLS. Las propuestas y el panel siguen ligados a `CULTURE_CITY_ID`; todavía no hay alta de municipios ni selección de ciudad administrativa.
 
+Al cargar páginas adicionales, la actualización automática de la agenda se pausa para no descartarlas. La interfaz permite actualizar manualmente volviendo a la primera página. Los avisos públicos se muestran también en la vista de todos los municipios, hasta un máximo de 100.
+
 El repositorio público usa un cliente anónimo sin cookies incluso si el visitante es administrador. Las escrituras del editor usan su sesión y RLS. Las propuestas públicas pasan exclusivamente por una función del servidor con service key y límites en la base de datos; no se concede acceso anónimo directo a la tabla. Las claves externas compuestas impiden asociar actos y avisos a recursos de otra ciudad.
 
 ## Instalación local

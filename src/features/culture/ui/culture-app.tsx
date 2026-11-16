@@ -52,7 +52,7 @@ function CultureContent({
   view: CultureView
   initialNow: string
 }) {
-  const { data, error, offline, pending, refresh, loadMore } = useCatalog(initial)
+  const { data, error, offline, pending, refresh, loadMore, pagingPaused } = useCatalog(initial)
   const { preferences, setMode, setLocale, storageError } = usePreferences()
   const [now, setNow] = useState(() => new Date(initialNow))
   const [query, setQuery] = useState("")
@@ -444,6 +444,7 @@ function CultureContent({
                 <button type="button" className="culture-button" disabled={pending} onClick={() => void loadMore()}>Carregar més actes</button>
               </div>
             )}
+            {pagingPaused && <p className="culture-meta">L’actualització automàtica està pausada mentre consultes diverses pàgines. <button type="button" disabled={pending} onClick={() => void refresh(data?.from)}>Actualitzar i tornar a la primera pàgina</button></p>}
             {data?.hasMore && data.nextOffset == null && (
               <p className="culture-notice">
                 S’ha arribat al límit de consulta. Tria un municipi o una data més concreta.
