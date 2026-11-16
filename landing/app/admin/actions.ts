@@ -1,0 +1,170 @@
+"use server"
+
+import { revalidatePath } from "next/cache"
+import { redirect } from "next/navigation"
+import { createClient } from "@/lib/supabase/server"
+import { citySession } from "@/src/features/culture/server/auth"
+import { hasDatabase } from "@/src/features/culture/server/config"
+
+// ─── Auth ────────────────────────────────────────────────────────────────────
+
+export async function login(
+  _prevState: { error?: string } | null,
+  formData: FormData
+): Promise<{ error: string }> {
+  if (!hasDatabase()) return { error: "Base de dades pendent de configurar." }
+  const supabase = await createClient()
+
+  const { error } = await supabase.auth.signInWithPassword({
+    email: formData.get("email") as string,
+    password: formData.get("password") as string,
+  })
+
+  if (error) return { error: error.message }
+
+  const session = await citySession()
+  if (!session || !["owner", "editor"].includes(session.role ?? "")) {
+    await supabase.auth.signOut()
+    return { error: "El compte no té permisos per editar aquesta ciutat." }
+  }
+
+  redirect("/admin/events")
+}
+
+export async function logout() {
+  const supabase = await createClient()
+  await supabase.auth.signOut()
+  redirect("/admin")
+}
+
+// ─── Auth guard helper ───────────────────────────────────────────────────────
+
+async function requireAuth(): Promise<
+  Awaited<ReturnType<typeof createClient>>
+> {
+  // Legacy native-app mutations are deliberately disabled in the new web admin.
+  // Kept temporarily so the archived UI sources remain type-checkable.
+  throw new Error(
+    "Administració antiga desactivada. Fes servir el nou panell cultural."
+  )
+}
+
+// ─── Events ──────────────────────────────────────────────────────────────────
+
+export async function cancelEvent(id: string, reason: string) {
+  const supabase = await requireAuth()
+
+  const { error } = await supabase
+    .from("events")
+    .update({ is_cancelled: true, cancelled_reason: reason })
+    .eq("id", id)
+
+  if (error) return { error: error.message }
+
+  revalidatePath("/admin/events")
+}
+
+export async function restoreEvent(id: string) {
+  const supabase = await requireAuth()
+
+  const { error } = await supabase
+    .from("events")
+    .update({ is_cancelled: false, cancelled_reason: null })
+    .eq("id", id)
+
+  if (error) return { error: error.message }
+
+  revalidatePath("/admin/events")
+}
+
+export async function updateEventTime(
+  id: string,
+  startTime: string,
+  endTime: string
+) {
+  const supabase = await requireAuth()
+
+  const { error } = await supabase
+    .from("events")
+    .update({ start_time: startTime, end_time: endTime })
+    .eq("id", id)
+
+  if (error) return { error: error.message }
+
+  revalidatePath("/admin/events")
+}
+
+interface RoutePoint {
+  lat: number
+  lng: number
+}
+
+interface EventPayload {
+  title: string
+  type: string
+  category: string
+  kind: string
+  short_description: string
+  image_url?: string
+  start_time: string
+  end_time: string
+  location_name?: string
+  location_lat?: number
+  location_lng?: number
+  route?: RoutePoint[] | null
+}
+
+export async function createEvent(data: EventPayload) {
+  const supabase = await requireAuth()
+  const festival_id = process.env.FESTIVAL_ID ?? "les-santes-2026"
+
+  const { error } = await supabase.from("events").insert({
+    id: crypto.randomUUID(),
+    festival_id,
+    is_cancelled: false,
+    ...data,
+  })
+
+  if (error) return { error: error.message }
+  revalidatePath("/admin/events")
+}
+
+export async function updateEvent(id: string, data: EventPayload) {
+  const supabase = await requireAuth()
+
+  const { error } = await supabase.from("events").update(data).eq("id", id)
+
+  if (error) return { error: error.message }
+  revalidatePath("/admin/events")
+}
+
+// ─── Announcements ───────────────────────────────────────────────────────────
+
+export async function createAnnouncement(formData: FormData): Promise<void> {
+  const supabase = await requireAuth()
+
+  const { error } = await supabase.from("announcements").insert({
+    festival_id: formData.get("festival_id") as string,
+    title: formData.get("title") as string,
+    message: formData.get("message") as string,
+    severity: formData.get("severity") as string,
+    event_id: (formData.get("event_id") as string) || null,
+  })
+
+  if (error) throw new Error(error.message)
+
+  revalidatePath("/admin/announcements")
+}
+
+export async function deactivateAnnouncement(id: string) {
+  const supabase = await requireAuth()
+
+  const { error } = await supabase
+    .from("announcements")
+    .update({ is_active: false })
+    .eq("id", id)
+
+  if (error) return { error: error.message }
+
+  revalidatePath("/admin/announcements")
+}

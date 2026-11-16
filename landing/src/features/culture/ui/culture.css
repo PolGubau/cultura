@@ -1,0 +1,310 @@
+.culture-app {
+  --background: #faf8f5;
+  --foreground: #1a1110;
+  --card: #ffffff;
+  --muted-foreground: #776c6a;
+  --border: #e4ddd6;
+  --primary: #c41e3a;
+  --primary-foreground: #ffffff;
+  min-height: 100dvh;
+  background: var(--background);
+  color: var(--foreground);
+}
+.culture-container {
+  width: min(1120px, calc(100% - 2rem));
+  margin-inline: auto;
+}
+.culture-main {
+  padding-block: 2rem 5rem;
+}
+.culture-header {
+  border-bottom: 1px solid var(--border);
+  padding-block: 1.25rem;
+}
+.culture-brand {
+  font-size: 1.25rem;
+  font-weight: 750;
+  text-decoration: none;
+}
+.culture-nav {
+  background: var(--background);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 30;
+}
+.culture-nav .culture-row {
+  justify-content: space-between;
+  gap: 0;
+}
+.culture-nav a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1rem 0.6rem;
+  font-size: 0.9rem;
+  text-decoration: none;
+  border-bottom: 3px solid transparent;
+}
+.culture-nav a[aria-current="page"] {
+  border-color: var(--primary);
+  font-weight: 700;
+}
+.culture-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.culture-between {
+  justify-content: space-between;
+}
+.culture-intro {
+  max-width: 760px;
+  padding-block: 1rem 2rem;
+}
+.culture-app h1,
+.culture-admin h1 {
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  font-weight: 750;
+  line-height: 1.12;
+  margin-block: 0.65rem 1rem;
+}
+.culture-app h2,
+.culture-admin h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.35;
+  margin-bottom: 0.7rem;
+}
+.culture-app p {
+  line-height: 1.65;
+}
+.culture-app a:not(.culture-button):not(.culture-brand),
+.culture-admin a:not(.culture-button) {
+  text-underline-offset: 0.22em;
+}
+.culture-app a:not(.culture-brand):hover,
+.culture-admin a:hover {
+  text-decoration: underline;
+}
+.culture-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 310px), 1fr));
+  gap: 1rem;
+  margin-block: 1.5rem;
+}
+.culture-card {
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  padding: 1.4rem;
+  background: var(--card);
+}
+.culture-card > p + p {
+  margin-top: 0.5rem;
+}
+.culture-card h2 a {
+  text-decoration: none;
+}
+.culture-meta {
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+}
+.culture-badge {
+  display: inline-block;
+  margin-left: 0.5rem;
+  border: 1px solid currentColor;
+  border-radius: 1rem;
+  padding: 0.1rem 0.6rem;
+  font-size: 0.75rem;
+}
+.culture-button {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.65rem 1rem;
+  border: 1px solid transparent;
+  border-radius: 0.65rem;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font-weight: 650;
+  text-decoration: none;
+  font-size: 1rem;
+}
+.culture-button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+.culture-quiet {
+  background: var(--background);
+  color: var(--foreground);
+  border-color: var(--border);
+}
+.culture-field {
+  display: grid;
+  gap: 0.45rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.culture-field input:not([type="checkbox"]),
+.culture-field select,
+.culture-field textarea {
+  min-height: 46px;
+  width: 100%;
+  border: 1px solid var(--border);
+  padding: 0.7rem;
+  border-radius: 0.6rem;
+  background: var(--background);
+  color: var(--foreground);
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 400;
+}
+.culture-field textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+.culture-filters {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  align-items: end;
+}
+.culture-filters .culture-field:first-child {
+  flex: 1 1 250px;
+}
+.culture-notice {
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--primary);
+  padding: 1rem;
+  margin-block: 1rem;
+  background: var(--card);
+  border-radius: 0.5rem;
+}
+.culture-warning {
+  font-weight: 650;
+}
+.culture-cancelled {
+  border-style: dashed;
+}
+.culture-empty {
+  text-align: center;
+  padding: 3rem 1rem;
+  border: 1px dashed var(--border);
+  border-radius: 1rem;
+  margin-top: 1.5rem;
+}
+.culture-stack {
+  display: grid;
+  gap: 1.25rem;
+}
+.culture-stack > * {
+  min-width: 0;
+}
+.culture-map {
+  height: min(65vh, 550px);
+  min-height: 300px;
+  margin-block: 1.5rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+}
+.culture-footer {
+  margin-top: 3rem;
+  padding-block: 2rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.875rem;
+}
+.culture-footer .culture-row {
+  margin-block: 0.75rem;
+}
+.culture-pagination {
+  padding-block: 1rem;
+}
+.culture-logo {
+  object-fit: contain;
+  border-radius: 0.5rem;
+}
+.culture-detail {
+  max-width: 800px;
+  margin: 2rem auto;
+}
+.culture-event-image {
+  width: 100%;
+  height: auto;
+  max-height: 450px;
+  object-fit: cover;
+  border-radius: 1rem;
+}
+.culture-lead {
+  font-size: 1.2rem;
+}
+.culture-prewrap {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.culture-detail dt {
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+.culture-admin {
+  max-width: 1120px;
+  margin: auto;
+  padding: 1.5rem 1rem 4rem;
+}
+.culture-admin nav {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding-block: 1rem;
+}
+.culture-admin form {
+  margin-block: 1rem;
+}
+.culture-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  gap: 1rem;
+}
+.culture-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.culture-table td,
+.culture-table th {
+  text-align: left;
+  padding: 0.9rem;
+  border-bottom: 1px solid var(--border);
+}
+.culture-app :focus-visible,
+.culture-admin :focus-visible {
+  outline: 3px solid var(--foreground);
+  outline-offset: 3px;
+}
+@media (max-width: 520px) {
+  .culture-nav a {
+    padding-inline: 0.35rem;
+    font-size: 0.82rem;
+  }
+  .culture-card {
+    padding: 1rem;
+  }
+}
+
+/* The same five destinations as Android, reachable with one thumb on mobile. */
+@media (max-width: 767px) {
+  .culture-app .culture-main { padding-block: 1.25rem calc(6rem + env(safe-area-inset-bottom)); }
+  .culture-app .culture-header { padding-top: max(1rem, env(safe-area-inset-top)); background: var(--card); }
+  .culture-app .culture-nav { position: fixed; top: auto; bottom: 0; left: 0; right: 0; background: var(--card); border-top: 1px solid var(--border); border-bottom: 0; padding-bottom: env(safe-area-inset-bottom); }
+  .culture-app .culture-nav .culture-container { width: 100%; }
+  .culture-app .culture-nav a { flex: 1; min-width: 0; min-height: 64px; flex-direction: column; gap: 3px; padding: 8px 2px; font-size: 11px; color: var(--muted-foreground); border-bottom: 0; }
+  .culture-app .culture-nav a[aria-current="page"] { color: var(--primary); }
+  .culture-app h1 { font-size: 30px; line-height: 36px; }
+  .culture-app .culture-intro { padding-block: 0.5rem 1.25rem; }
+  .culture-app .culture-grid { gap: 16px; }
+  .culture-app .culture-card { padding: 18px; }
+  .culture-app .culture-filters { gap: 12px; }
+  .culture-app .culture-filters .culture-field:first-child { flex-basis: 100%; }
+}
