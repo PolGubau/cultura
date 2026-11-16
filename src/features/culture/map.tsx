@@ -5,7 +5,7 @@ import { EventMap } from '../map/components/EventMap';
 import type { Event } from '../../entities/event/types';
 import { dayKey, eventText, isLive, type MapBounds, type MapEvent, type MapFilters } from './core';
 import { cultureClient, useCulture } from './provider';
-import { Button, styles } from './ui';
+import { Button, CityPicker, styles } from './ui';
 
 export function CultureMap() {
   const { preferences, now } = useCulture();
@@ -53,10 +53,7 @@ export function CultureMap() {
     return { ...base, kind: 'static' as const, location: { lat: event.place.latitude, lng: event.place.longitude } };
   }), [events, preferences.locale, now]);
   return <View style={styles.header}>
-    <Text style={styles.heading}>Municipi</Text><ScrollView horizontal contentContainerStyle={styles.row}>
-      <Button title="Tots" selected={!city} onPress={() => { setCity(''); setFestival(''); }} />
-      {filters.cities.map((item) => <Button key={item.id} title={item.name} selected={city === item.id} onPress={() => { setCity(item.id); setFestival(''); }} />)}
-    </ScrollView>
+    <CityPicker cities={filters.cities} selected={city} onSelect={(id) => { setCity(id); setFestival(''); }} />
     <Text style={styles.heading}>Festa</Text><ScrollView horizontal contentContainerStyle={styles.row}>
       <Button title="Totes" selected={!festival} onPress={() => setFestival('')} />
       {filters.festivals.filter((item) => !city || item.city_id === city).map((item) => <Button key={item.id} title={`${item.name} · ${filters.cities.find((c) => c.id === item.city_id)?.name ?? ''}`} selected={festival === item.id} onPress={() => setFestival(item.id)} />)}

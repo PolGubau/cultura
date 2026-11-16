@@ -1,6 +1,6 @@
-import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { cultureTheme as theme, readableForeground } from './core';
+import React, { useMemo, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { cultureTheme as theme, readableForeground, searchCities, type City } from './core';
 import { useCulture } from './provider';
 
 export function Button({ title, onPress, selected = false, disabled = false }: { title: string; onPress: () => void; selected?: boolean; disabled?: boolean }) {
@@ -9,6 +9,20 @@ export function Button({ title, onPress, selected = false, disabled = false }: {
     style={[styles.button, selected && { backgroundColor: primary, borderColor: primary }, disabled && { opacity: 0.5 }]}>
     <Text style={[styles.body, selected && { color: readableForeground(primary) }]}>{title}</Text>
   </Pressable>;
+}
+export function CityPicker({ cities, selected, onSelect, disabled = false }: { cities: City[]; selected: string; onSelect: (city: string) => void; disabled?: boolean }) {
+  const [query, setQuery] = useState('');
+  const matches = useMemo(() => searchCities(cities, query), [cities, query]);
+  return <>
+    <Text style={styles.heading}>Municipi</Text>
+    <Text style={styles.meta}>{selected ? cities.find((city) => city.id === selected)?.name : 'Tots els municipis'}</Text>
+    <TextInput style={styles.input} placeholderTextColor="#776C6A" accessibilityLabel="Cerca municipi" placeholder="Cerca un municipi" value={query} onChangeText={setQuery} />
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.row}>
+      <Button title="Tots els municipis" selected={!selected} disabled={disabled} onPress={() => onSelect('')} />
+      {matches.map((city) => <Button key={city.id} title={city.name} selected={selected === city.id} disabled={disabled} onPress={() => onSelect(city.id)} />)}
+    </ScrollView>
+    {cities.length > 20 && !query && <Text style={styles.meta}>Escriu el nom per trobar més municipis.</Text>}
+  </>;
 }
 export function Favorite({ id }: { id: string }) {
   const { preferences, setPreferences, primary } = useCulture();

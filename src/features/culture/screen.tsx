@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import { categoryKey, eventText, filterEvents, isLive, formatDate, dayKey, type CulturalEvent } from './core';
 import { useCulture } from './provider';
-import { Button, Favorite, Status, styles } from './ui';
+import { Button, CityPicker, Favorite, Status, styles } from './ui';
 import { CultureMap } from './map';
 
 export type CultureView = 'agenda' | 'now' | 'map' | 'favorites' | 'settings';
@@ -13,7 +13,6 @@ const titles: Record<CultureView, string> = { agenda: 'Què fem?', now: 'Està p
 export function CultureScreen({ view }: { view: CultureView }) {
   const { data, festival, preferences, setPreferences, now, pending, refresh, loadMore } = useCulture();
   const [query, setQuery] = useState('');
-  const [cityQuery, setCityQuery] = useState('');
   const [category, setCategory] = useState('');
   const [day, setDay] = useState('');
   const events = useMemo(() => filterEvents(data?.events ?? [], { festivalId: festival?.id, query, category,
@@ -22,7 +21,6 @@ export function CultureScreen({ view }: { view: CultureView }) {
       (dayKey(event.starts_at, data?.city.timezone) <= day && dayKey(new Date(Date.parse(event.ends_at) - 1), data?.city.timezone) >= day)),
     [data, festival?.id, query, category, preferences, view, now, day]);
   const days = useMemo(() => [...new Set((data?.events ?? []).map((event) => dayKey(event.starts_at, data?.city.timezone)))], [data]);
-  const cities = useMemo(() => (data?.cities ?? []).filter((city) => city.name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase().includes(cityQuery.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase())).slice(0, 20), [data?.cities, cityQuery]);
   if (view === 'map') return <SafeAreaView edges={['top', 'left', 'right']} style={styles.screen}><ScrollView contentContainerStyle={styles.content}><Text accessibilityRole="header" style={styles.title}>{titles.map}</Text><CultureMap /></ScrollView></SafeAreaView>;
   const header = <View style={styles.header}>
     <Text style={styles.brand}>{festival?.name ?? 'Agenda cultural'}</Text>
@@ -33,15 +31,9 @@ export function CultureScreen({ view }: { view: CultureView }) {
     {festival && <Button title="Veure tota la ciutat" onPress={() => setPreferences((previous) => ({ ...previous, mode: 'city' }))} />}
     <Status />
     {data?.announcements.filter((item) => (!item.festival_id || item.festival_id === festival?.id) && Date.parse(item.starts_at) <= now.getTime() && Date.parse(item.ends_at) > now.getTime()).map((item) =>
-      <View key={item.id} style={styles.notice} accessibilityLiveRegion="polite"><Text style={styles.heading}>{item.title}</Text><Text style={styles.body}>{item.message}</Text></View>)}
+      <View key={item.id} style={styles.notice} accessibilityLiveRegion="polite"><Text style={styles.heading}>{!data.selectedCity && item.city_id ? `${data.cities?.find((city) => city.id === item.city_id)?.name ?? item.city_id} · ` : ''}{item.title}</Text><Text style={styles.body}>{item.message}</Text></View>)}
     {view !== 'settings' && <>
-      <Text style={styles.heading}>Municipi</Text>
-      <TextInput style={styles.input} placeholderTextColor="#776C6A" accessibilityLabel="Cerca municipi" placeholder="Cerca un municipi" value={cityQuery} onChangeText={setCityQuery} />
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
-        <Button title="Tots els municipis" selected={!data?.selectedCity} disabled={pending} onPress={() => { setCategory(''); void refresh(data?.from, ''); }} />
-        {cities.map((city) => <Button key={city.id} title={city.name} selected={data?.selectedCity === city.id} disabled={pending} onPress={() => { setCategory(''); void refresh(data?.from, city.id); }} />)}
-      </ScrollView>
-      {(data?.cities?.length ?? 0) > 20 && !cityQuery && <Text style={styles.meta}>Escriu el nom per trobar més municipis.</Text>}
+      <CityPicker cities={data?.cities ?? []} selected={data?.selectedCity ?? ''} disabled={pending} onSelect={(city) => { setCategory(''); void refresh(data?.from, city); }} />
       <TextInput style={styles.input} placeholderTextColor="#776C6A" accessibilityLabel="Cerca actes" placeholder="Acte, artista o organització" value={query} onChangeText={setQuery} />
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
         <Button title="Totes" selected={!category} onPress={() => setCategory('')} />
