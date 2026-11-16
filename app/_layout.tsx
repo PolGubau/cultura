@@ -1,8 +1,5 @@
-import { FeedbackModal, useSmartFeedbackNudge } from '@/features/feedback';
-import { useTrackAppOpenOnMount } from '@/features/nudges';
-import { OnboardingFlow, useOnboardingStore } from '@/features/onboarding';
+import { CultureProvider } from '@/features/culture/provider';
 import { Colors } from '@/shared/constants';
-import { useLocaleStore, usePushNotifications } from '@/shared/hooks';
 import { t } from '@/shared/i18n';
 import { ThemeProvider } from '@/shared/theme';
 import { Text } from '@/shared/ui';
@@ -37,7 +34,7 @@ export function ErrorBoundary({ error, retry }: { error: Error; retry: () => voi
         <Text style={styles.buttonText}>{t('error.retry')}</Text>
       </Pressable>
       <Pressable
-        onPress={() => router.replace('/(tabs)/ara')}
+        onPress={() => router.replace('/(culture)')}
         accessibilityRole="button"
         accessibilityLabel={t('notFound.backToHome')}
       >
@@ -54,23 +51,7 @@ export default function RootLayout() {
     Inter_700Bold,
   });
 
-  // Initialize push notifications (permission request + token registration)
-  usePushNotifications();
-
-  // Count this session for behaviour-driven nudges
-  useTrackAppOpenOnMount();
-
-  // Subscribe to the active locale. The store itself owns `i18n.locale`;
-  // here we just need to re-render the navigation tree so every screen
-  // picks up fresh translations when the user switches language at runtime.
-  const locale = useLocaleStore((s) => s.locale);
-
-  // First-run onboarding (3 slides)
-  const hasSeenOnboarding = useOnboardingStore((s) => s.hasSeenOnboarding);
-  const markOnboardingSeen = useOnboardingStore((s) => s.markSeen);
-
-  // Soft trigger: engaged users get the feedback modal once it's earned.
-  useSmartFeedbackNudge({ enabled: hasSeenOnboarding });
+  // No legacy festival queries, push registration or first-run interruptions.
 
   useEffect(() => {
     if (fontsLoaded || fontError) {
@@ -87,21 +68,22 @@ export default function RootLayout() {
           mode activates once the `Colors.*` → `useTheme()` migration lands. */}
       <ThemeProvider>
         <SafeAreaProvider>
+          <CultureProvider>
           <StatusBar style="auto" />
-          {/* `key={locale}` remounts the whole navigation tree on language
-            change so every screen picks up the new translations, since most
-            components consume `t` directly without subscribing to the store. */}
           <Stack
-            key={locale}
             screenOptions={{
               headerShown: false,
               animation: 'fade_from_bottom',
               animationDuration: 320,
               gestureEnabled: true,
             }}
-          />
-          <OnboardingFlow visible={!hasSeenOnboarding} onFinish={markOnboardingSeen} />
-          <FeedbackModal />
+          >
+            {/* Archived festival routes must not shadow /ara and /mapa or mount the old backend. */}
+            <Stack.Protected guard={false}>
+              <Stack.Screen name="(tabs)" />
+            </Stack.Protected>
+          </Stack>
+          </CultureProvider>
         </SafeAreaProvider>
       </ThemeProvider>
     </GestureHandlerRootView>

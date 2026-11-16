@@ -1,50 +1,44 @@
 {
   "expo": {
-    "name": "Les Santes",
+    "name": "Mataró Cultura",
     "slug": "app",
     "scheme": "les-santes",
     "version": "1.1.2",
-    "icon": "./assets/ios-light.png",
+    "icon": "./assets/culture-icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash-icon-light.png",
+      "image": "./assets/culture-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#8A1A10",
+      "backgroundColor": "#9f1239",
       "dark": {
-        "image": "./assets/splash-icon-dark.png",
-        "backgroundColor": "#1a0a08"
+        "image": "./assets/culture-icon.png",
+        "backgroundColor": "#9f1239"
       }
     },
     "ios": {
       "bundleIdentifier": "com.polgubau.lessantes",
       "supportsTablet": false,
       "icon": {
-        "light": "./assets/ios-light.png",
-        "dark": "./assets/ios-dark.png",
-        "tinted": "./assets/ios-tinted.png"
+        "light": "./assets/culture-icon.png",
+        "dark": "./assets/culture-icon.png",
+        "tinted": "./assets/culture-monochrome.png"
       },
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "La app necessita la teva ubicació per mostrar-la al mapa del festival i filtrar actes propers.",
+        "NSLocationWhenInUseUsageDescription": "La app utilitza la teva ubicació per mostrar-la al mapa cultural de Mataró.",
         "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
       "package": "com.polgubau.lessantes",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "monochromeImage": "./assets/adaptive-icon-mono.png",
-        "backgroundColor": "#8A1A10"
+        "foregroundImage": "./assets/culture-adaptive.png",
+        "monochromeImage": "./assets/culture-monochrome.png",
+        "backgroundColor": "#9f1239"
       },
       "permissions": [
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.ACCESS_COARSE_LOCATION",
-        "android.permission.POST_NOTIFICATIONS",
-        "android.permission.READ_CALENDAR",
-        "android.permission.WRITE_CALENDAR",
-        "android.permission.ACCESS_FINE_LOCATION",
-        "android.permission.ACCESS_COARSE_LOCATION",
-        "android.permission.POST_NOTIFICATIONS",
         "android.permission.READ_CALENDAR",
         "android.permission.WRITE_CALENDAR"
       ],
@@ -53,7 +47,7 @@
     },
     "web": {
       "bundler": "metro",
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/culture-icon.png"
     },
     "extra": {
       "eas": {
@@ -66,13 +60,13 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "La app necessita la teva ubicació per mostrar-la al mapa del festival i filtrar actes propers."
+          "locationWhenInUsePermission": "La app utilitza la teva ubicació per mostrar-la al mapa cultural de Mataró."
         }
       ],
       [
         "expo-calendar",
         {
-          "calendarPermission": "La app vol afegir actes del festival al teu calendari."
+          "calendarPermission": "La app vol afegir actes culturals al teu calendari."
         }
       ],
       "expo-font",
@@ -80,8 +74,8 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/adaptive-icon-mono.png",
-          "color": "#8A1A10",
+          "icon": "./assets/culture-monochrome.png",
+          "color": "#9f1239",
           "defaultChannel": "default",
           "sounds": []
         }
@@ -96,7 +90,7 @@
               "subtitle": "Actes en curs",
               "icon": "time",
               "params": {
-                "href": "/(tabs)/ara"
+                "href": "/(culture)/ara"
               }
             },
             {
@@ -105,16 +99,16 @@
               "subtitle": "Tots els actes",
               "icon": "date",
               "params": {
-                "href": "/(tabs)/agenda"
+                "href": "/(culture)"
               }
             },
             {
               "id": "mapa",
               "title": "Mapa",
-              "subtitle": "Mapa del festival",
+              "subtitle": "Mapa cultural de Mataró",
               "icon": "location",
               "params": {
-                "href": "/(tabs)/mapa"
+                "href": "/(culture)/mapa"
               }
             }
           ]

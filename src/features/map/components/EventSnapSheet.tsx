@@ -11,7 +11,6 @@ import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { CalendarPlus, Clock, ExternalLink, Map, MapPin, Navigation, PersonStanding } from 'lucide-react-native';
-import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import { Linking, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/shared/ui';
@@ -35,7 +34,8 @@ export function EventSnapSheet({ event, onClose, showViewInMap, onViewInMap }: P
   const sheetRef = useRef<BottomSheet>(null);
   const stateColor = STATE_COLOR[event.state];
   const insets = useSafeAreaInsets();
-  const tabBarHeight = useBottomTabBarHeight();
+  // Archived navigator sets an explicit 64pt bar plus the device safe area.
+  const tabBarHeight = 64 + insets.bottom;
 
   useEffect(() => {
     sheetRef.current?.snapToIndex(0);

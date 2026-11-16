@@ -1,7 +1,8 @@
 module.exports = (api) => {
   api.cache(true);
   return {
-    presets: ["babel-preset-expo"],
+    // Resolve Expo's own declared preset under pnpm's isolated dependency layout.
+    presets: [require.resolve('babel-preset-expo', { paths: [require.resolve('expo/package.json')] })],
     plugins: [
       [
         "module-resolver",
