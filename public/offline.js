@@ -59,7 +59,7 @@
         article
       )
       const place = data.places.find((item) => item.id === event.place_id)
-      if (place) element("p", `${place.name} · ${place.address}`, article)
+      if (place) element("p", `${place.name} · ${place.address}${data.cities?.find((city) => city.id === event.city_id)?.name ? ` · ${data.cities.find((city) => city.id === event.city_id).name}` : ""}`, article)
       element("p", text.summary, article)
       const detail = element("details", "", article)
       element("summary", "Més informació", detail)
@@ -97,7 +97,7 @@
           Number(a.events.some((event) => event.id === linkedId))
       )
     catalogs.forEach((data, index) => {
-      const option = element("option", `${data.from} — ${data.to}`, periods)
+      const option = element("option", `${data.city.name} · ${data.from} — ${data.to}`, periods)
       option.value = String(index)
     })
     periods.addEventListener("change", render)

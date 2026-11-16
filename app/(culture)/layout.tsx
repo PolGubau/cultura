@@ -6,15 +6,15 @@ export const revalidate = 30
 
 export const metadata: Metadata = {
   title: {
-    default: "Agenda cultural de Mataró",
-    template: "%s · Mataró Cultura",
+    default: "Agenda cultural de Catalunya",
+    template: "%s · Agenda cultural",
   },
   description:
-    "Descobreix els actes culturals de Mataró tot l’any. Agenda, mapa i favorits, sense crear un compte.",
-  applicationName: "Mataró Cultura",
+    "Descobreix actes culturals dels municipis disponibles. Agenda, mapa i favorits, sense crear un compte.",
+  applicationName: "Agenda cultural",
   openGraph: {
-    title: "Agenda cultural de Mataró",
-    description: "La cultura de la ciutat, tot l’any.",
+    title: "Agenda cultural de Catalunya",
+    description: "La cultura dels municipis disponibles, tot l’any.",
     locale: "ca_ES",
     type: "website",
   },

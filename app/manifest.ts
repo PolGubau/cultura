@@ -3,9 +3,9 @@ import type { MetadataRoute } from "next"
 export default function manifest(): MetadataRoute.Manifest {
   return {
     id: "/",
-    name: "Agenda cultural de Mataró",
-    short_name: "Mataró Cultura",
-    description: "La cultura de Mataró, tot l’any. Agenda, mapa i favorits.",
+    name: "Agenda cultural de Catalunya",
+    short_name: "Agenda cultural",
+    description: "Agenda cultural, mapa i favorits dels municipis disponibles.",
     start_url: "/",
     display: "standalone",
     background_color: "#faf8f5",

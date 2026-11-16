@@ -5,6 +5,7 @@ import { CITY_ID, FALLBACK_CITY, hasDatabase } from "./config"
 import { addDays, dayKey, toUtc, validDay } from "../domain/time"
 import type { CatalogResult, City, CultureCatalog } from "../domain/types"
 import { cachePublicJson } from "./public-cache"
+import { makePublicCatalog, type JoinedPublicEvent } from "../../../../../shared/culture/public-catalog"
 
 export const fields = {
   city: "id,name,timezone,latitude,longitude",
@@ -141,16 +142,55 @@ async function queryCatalog(
   }
 }
 
-const cachedCatalog = cachePublicJson("culture-catalog-v1", async (from) => {
-  const result = await queryCatalog(from)
-  if (!result.data)
-    throw new Error(result.error ?? "No es pot carregar l’agenda.")
-  return result.data
+async function queryPublicCatalog(from: string, cityId: string, offset: number): Promise<CultureCatalog> {
+  const db = anonymousClient()
+  const to = addDays(from, 90)
+  async function all(table: "cities" | "city_festivals", select: string) {
+    const items: unknown[] = []
+    for (let offset = 0; ; offset += 500) {
+      let request = db.from(table).select(select).order("id").range(offset, offset + 499)
+      if (table === "city_festivals") {
+        request = request.eq("publication", "published")
+        if (cityId) request = request.eq("city_id", cityId)
+      }
+      const { data, error } = await request
+      if (error || !data) throw new Error("Public metadata unavailable")
+      items.push(...data)
+      if (data.length < 500) return items
+    }
+  }
+  let events = db.from("city_events")
+    .select(`${fields.events},place:city_places!city_events_city_id_place_id_fkey!inner(${fields.places}),category:city_categories!city_events_city_id_category_id_fkey!inner(${fields.categories})`)
+    .eq("publication", "published")
+    .gt("ends_at", toUtc(`${from}T00:00`, "Europe/Madrid"))
+    .lt("starts_at", toUtc(`${to}T00:00`, "Europe/Madrid"))
+    .order("starts_at").order("id").range(offset, offset + 999)
+  if (cityId) events = events.eq("city_id", cityId)
+  const announcements = cityId
+    ? db.from("city_announcements").select(fields.announcements).eq("city_id", cityId).eq("publication", "published").order("starts_at", { ascending: false }).limit(100)
+    : Promise.resolve({ data: [], error: null })
+  const [cities, festivals, rows, notices] = await Promise.all([
+    all("cities", fields.city), all("city_festivals", `${fields.festivals},city_id`), events, announcements,
+  ])
+  if (rows.error || notices.error || !rows.data || !notices.data ||
+      (cityId && !cities.some((item) => (item as City).id === cityId))) throw new Error("Public catalogue unavailable")
+  return makePublicCatalog({
+    cities: cities as City[], selectedCity: cityId,
+    festivals: festivals as CultureCatalog["festivals"], events: rows.data as unknown as JoinedPublicEvent[],
+    announcements: notices.data as CultureCatalog["announcements"], from, to, offset, fetchedAt: new Date().toISOString(),
+  })
+}
+
+const cachedCatalog = cachePublicJson("culture-multicity-catalog-v2", async (key) => {
+  const [from, cityId, offset] = JSON.parse(key) as [string, string, number]
+  return queryPublicCatalog(from, cityId, offset)
 })
 
 export async function loadCatalog(
   fromInput?: string,
-  admin = false
+  admin = false,
+  cityId = "",
+  offset = 0
 ): Promise<CatalogResult> {
   if (admin || !hasDatabase()) return queryCatalog(fromInput, admin)
   const from =
@@ -158,7 +198,7 @@ export async function loadCatalog(
       ? fromInput
       : dayKey(new Date(), FALLBACK_CITY.timezone)
   try {
-    return { data: await cachedCatalog(from), error: null }
+    return { data: await cachedCatalog(JSON.stringify([from, cityId, offset])), error: null }
   } catch {
     return {
       data: null,

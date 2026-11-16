@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import type { CultureCatalog } from "../domain/types"
 import { registerCultureServiceWorker } from "./service-worker"
+import { catalogPath } from "../../../../../shared/culture/client"
 
 export function PwaRegistration({
   catalog,
@@ -25,7 +26,7 @@ export function PwaRegistration({
       .then(async () => {
         if (cancelled) return
         const cache = await caches.open("culture-v1-data")
-        const url = `/api/culture?from=${encodeURIComponent(catalog.from)}`
+        const url = catalogPath(catalog.from, catalog.selectedCity)
         const existing = await cache.match(url)
         const saved = existing ? await existing.json() : null
         if (saved?.data?.fetchedAt > catalog.fetchedAt) return

@@ -36,7 +36,7 @@ export function EventCard({
   const text = eventText(event, preferences.locale)
   const place = catalog.places.find((item) => item.id === event.place_id)
   const category = catalog.categories.find(
-    (item) => item.id === event.category_id
+    (item) => item.id === event.category_id && (!item.city_id || item.city_id === event.city_id)
   )
   return (
     <article
@@ -85,6 +85,7 @@ export function EventCard({
       <p>{text.summary}</p>
       <p className="culture-meta">
         {place?.name ?? "Ubicació pendent"}
+        {catalog.cities?.find((city) => city.id === event.city_id)?.name ? ` · ${catalog.cities.find((city) => city.id === event.city_id)!.name}` : ""}
         {event.price ? ` · ${event.price}` : ""}
       </p>
     </article>

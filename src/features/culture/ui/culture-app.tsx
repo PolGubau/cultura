@@ -17,6 +17,7 @@ import { InstallHelp, PwaRegistration } from "./pwa"
 import { useCatalog } from "./use-catalog"
 import { CalendarDotsIcon, LightningIcon, MapTrifoldIcon, HeartIcon, GearSixIcon } from "@phosphor-icons/react"
 import { cultureNavigation } from "../../../../../shared/culture/presentation"
+import { categoryKey } from "../../../../../shared/culture/catalog"
 
 const EventMap = dynamic(() => import("./multicity-map"), {
   ssr: false,
@@ -51,7 +52,7 @@ function CultureContent({
   view: CultureView
   initialNow: string
 }) {
-  const { data, error, offline, pending, refresh } = useCatalog(initial)
+  const { data, error, offline, pending, refresh, loadMore } = useCatalog(initial)
   const { preferences, setMode, setLocale, storageError } = usePreferences()
   const [now, setNow] = useState(() => new Date(initialNow))
   const [query, setQuery] = useState("")
@@ -65,7 +66,7 @@ function CultureContent({
     return () => { clearTimeout(initialTick); clearInterval(timer) }
   }, [])
   const today = dayKey(now, data?.city.timezone)
-  const festival = view === "map" ? null : resolveFestival(
+  const festival = view === "map" || (preferences.mode === "auto" && data?.selectedCity === "") ? null : resolveFestival(
     data?.festivals ?? [],
     preferences.mode,
     today
@@ -107,7 +108,7 @@ function CultureContent({
     [filtered, liveNow, selectedDay, timezone]
   )
   const titles = {
-    agenda: "Què fem a Mataró?",
+    agenda: "Què fem?",
     now: "Està passant ara",
     map: "La cultura, al mapa",
     favorites: "La teva agenda",
@@ -132,7 +133,7 @@ function CultureContent({
       <header className="culture-header">
         <div className="culture-container culture-row culture-between">
           <Link href="/" className="culture-brand">
-            {view === "map" ? "Agenda cultural" : festival?.name ?? "Mataró · Cultura"}
+            {festival?.name ?? "Agenda cultural"}
           </Link>
           <Link href="/admin" className="culture-meta">
             Administració
@@ -160,7 +161,7 @@ function CultureContent({
       <main id="main-content" className="culture-container culture-main">
         <section className="culture-intro">
           <p className="culture-meta">
-            Tot l’any, a prop teu · {view === "map" ? "Catalunya" : data?.city.name ?? "Mataró"}
+            Tot l’any, a prop teu · {view === "map" ? "Catalunya" : data?.city.name ?? "Catalunya"}
           </p>
           <h1>{titles[view]}</h1>
           <p>
@@ -244,7 +245,7 @@ function CultureContent({
                   onChange={(event) => setMode(event.target.value)}
                 >
                   <option value="auto">Automàtic segons les dates</option>
-                  <option value="city">Tota l’agenda de Mataró</option>
+                  <option value="city">Tota l’agenda</option>
                   {data?.festivals.map((item) => (
                     <option key={item.id} value={item.id}>
                       {item.name}
@@ -291,6 +292,16 @@ function CultureContent({
               onSubmit={(event) => event.preventDefault()}
             >
               <label className="culture-field">
+                Municipi
+                <select value={data?.selectedCity ?? ""} disabled={pending || !data?.cities} onChange={(event) => {
+                  setCategory(""); setVisibleCount(60)
+                  void refresh(data?.from, undefined, event.target.value)
+                }}>
+                  <option value="">Tots els municipis</option>
+                  {data?.cities?.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+                </select>
+              </label>
+              <label className="culture-field">
                 Cerca
                 <input
                   type="search"
@@ -313,8 +324,8 @@ function CultureContent({
                 >
                   <option value="">Totes</option>
                   {data?.categories.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.name}
+                    <option key={categoryKey(item)} value={categoryKey(item)}>
+                      {item.name}{!data.selectedCity && item.city_id ? ` · ${data.cities?.find((city) => city.id === item.city_id)?.name ?? item.city_id}` : ""}
                     </option>
                   ))}
                 </select>
@@ -426,18 +437,24 @@ function CultureContent({
                 </button>
               </div>
             )}
-            {data?.hasMore && (
+            {data?.nextOffset != null && (
+              <div className="culture-notice">
+                <p>Hi ha més actes en aquest període que encara no s’han carregat.</p>
+                <button type="button" className="culture-button" disabled={pending} onClick={() => void loadMore()}>Carregar més actes</button>
+              </div>
+            )}
+            {data?.hasMore && data.nextOffset == null && (
               <p className="culture-notice">
-                S’ha arribat al límit de 1.000 actes en aquest període. Tria una
-                data posterior per carregar els següents.
+                S’ha arribat al límit de consulta. Tria un municipi o una data més concreta.
               </p>
             )}
           </>
         )}
         <footer className="culture-footer">
-          <p>{view === "map" ? "Agenda cultural" : "Mataró · Cultura"} · Iniciativa independent</p>
+          <p>Agenda cultural · Iniciativa independent</p>
           <div className="culture-row">
             <Link href="/proposa">Proposa un acte</Link>
+            <Link href="/descobreix">Sobre l’agenda</Link>
             <Link href="/legal/privacitat">Privacitat</Link>
             <Link href="/contacte">Contacte</Link>
             <Link href="/santes-2026">App de 2026</Link>
