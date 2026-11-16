@@ -12,7 +12,7 @@ export default function CultureTabs() {
   useQuickActionRouting();
   useEffect(() => {
     void QuickActions.setItems([
-      { id: 'agenda', title: 'Agenda', subtitle: 'La cultura de Mataró', icon: Platform.OS === 'android' ? 'shortcut_agenda' : 'date', params: { href: '/(culture)' } },
+      { id: 'agenda', title: 'Agenda', subtitle: 'Actes culturals', icon: Platform.OS === 'android' ? 'shortcut_agenda' : 'date', params: { href: '/(culture)' } },
       { id: 'ara', title: 'Ara', subtitle: 'Actes en curs', icon: Platform.OS === 'android' ? 'shortcut_ara' : 'time', params: { href: '/(culture)/ara' } },
       { id: 'mapa', title: 'Mapa', subtitle: 'La cultura al mapa', icon: Platform.OS === 'android' ? 'shortcut_mapa' : 'location', params: { href: '/(culture)/mapa' } },
     ]).catch(() => { /* Shortcuts are optional on unsupported launchers. */ });

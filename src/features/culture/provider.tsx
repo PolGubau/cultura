@@ -1,12 +1,12 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { AppState } from 'react-native';
-import { createCultureClient, dayKey, resolveFestival, cultureTheme, type CultureCatalog, type Locale } from './core';
+import { createCultureClient, dayKey, resolveFestival, cultureTheme, mergeCatalogPages, type CultureCatalog, type Locale } from './core';
 
 // This is a public URL, never a database credential. No legacy Supabase fallback.
 const apiUrl = process.env.EXPO_PUBLIC_CULTURE_API_URL ?? '';
 export const cultureClient = createCultureClient(apiUrl);
-const CACHE = 'culture:catalog:v1';
+const CACHE = 'culture:catalog:v2';
 const PREFS = 'culture:preferences:v1';
 type Preferences = { mode: string; locale: Locale; favorites: string[] };
 const defaults: Preferences = { mode: 'auto', locale: 'ca', favorites: [] };
@@ -22,11 +22,15 @@ function useCultureState() {
   const [now, setNow] = useState(new Date());
   const lastAttempt = useRef(0);
   const currentFrom = useRef<string | undefined>(undefined);
+  const currentCity = useRef('');
+  const resultCity = useRef('');
+  const loadedExtraPages = useRef(false);
   const controller = useRef<AbortController | null>(null);
   const preferenceWrites = useRef(Promise.resolve());
 
-  const refresh = useCallback(async (from?: string) => {
+  const refresh = useCallback(async (from?: string, city?: string) => {
     if (from) currentFrom.current = from;
+    if (city !== undefined) currentCity.current = city;
     controller.current?.abort();
     const request = new AbortController();
     controller.current = request;
@@ -34,12 +38,15 @@ function useCultureState() {
     setPending(true);
     try {
       if (!apiUrl) throw new Error('Configura EXPO_PUBLIC_CULTURE_API_URL per connectar l’agenda.');
-      const result = await cultureClient.catalog(currentFrom.current, request.signal);
+      const result = await cultureClient.catalog(currentFrom.current, request.signal, currentCity.current);
       if (request.signal.aborted) return;
+      loadedExtraPages.current = false;
+      resultCity.current = result.data.selectedCity ?? '';
       setData(result.data); setOffline(result.offline); setError('');
       await AsyncStorage.setItem(CACHE, JSON.stringify(result.data)).catch(() => setStorageError(true));
     } catch (cause) {
       if (!request.signal.aborted) {
+        currentCity.current = resultCity.current;
         setOffline(true);
         setError(cause instanceof Error ? cause.message : 'No es pot actualitzar.');
       }
@@ -47,6 +54,22 @@ function useCultureState() {
       if (!request.signal.aborted) setPending(false);
     }
   }, []);
+
+  const loadMore = useCallback(async () => {
+    if (!data || data.nextOffset == null || pending) return;
+    controller.current?.abort();
+    const request = new AbortController(); controller.current = request; setPending(true);
+    try {
+      const page = await cultureClient.catalog(data.from, request.signal, data.selectedCity, data.nextOffset);
+      if (request.signal.aborted) return;
+      loadedExtraPages.current = true;
+      const merged = mergeCatalogPages(data, page.data);
+      setData(merged); setOffline(page.offline); setError('');
+      await AsyncStorage.setItem(CACHE, JSON.stringify(merged)).catch(() => setStorageError(true));
+    } catch (cause) {
+      if (!request.signal.aborted) setError(cause instanceof Error ? cause.message : 'No es poden carregar més actes.');
+    } finally { if (!request.signal.aborted) setPending(false); }
+  }, [data, pending]);
 
   useEffect(() => {
     let mounted = true;
@@ -56,6 +79,7 @@ function useCultureState() {
         try {
           const parsed = JSON.parse(cached) as CultureCatalog;
           if (parsed.city?.id && Array.isArray(parsed.events) && Array.isArray(parsed.places)) {
+            currentCity.current = parsed.selectedCity ?? ''; resultCity.current = currentCity.current;
             setData(parsed); setOffline(true); setPending(false);
           }
         } catch { setStorageError(true); }
@@ -84,7 +108,7 @@ function useCultureState() {
     const schedule = () => {
       clearTimeout(timer);
       timer = setTimeout(async () => {
-        if (AppState.currentState === 'active' && Date.now() - lastAttempt.current >= 60_000) await refresh();
+        if (AppState.currentState === 'active' && !loadedExtraPages.current && Date.now() - lastAttempt.current >= 60_000) await refresh();
         schedule();
       }, 60_000 + Math.random() * 15_000);
     };
@@ -94,9 +118,9 @@ function useCultureState() {
     return () => { clearTimeout(timer); clearInterval(clock); subscription.remove(); };
   }, [refresh]);
 
-  const festival = resolveFestival(data?.festivals ?? [], preferences.mode, dayKey(now, data?.city.timezone));
+  const festival = preferences.mode === 'auto' && data?.selectedCity === '' ? null : resolveFestival(data?.festivals ?? [], preferences.mode, dayKey(now, data?.city.timezone));
   const primary = festival?.primary_color ?? cultureTheme.primary;
-  return { data, preferences, setPreferences, pending, offline, error, storageError, now, festival, primary, refresh };
+  return { data, preferences, setPreferences, pending, offline, error, storageError, now, festival, primary, refresh, loadMore };
 }
 const Context = createContext<ReturnType<typeof useCultureState> | null>(null);
 export function CultureProvider({ children }: { children: React.ReactNode }) {

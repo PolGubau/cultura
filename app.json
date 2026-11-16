@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Mataró Cultura",
+    "name": "Agenda cultural",
     "slug": "app",
     "scheme": "les-santes",
     "version": "1.1.2",
@@ -25,7 +25,7 @@
         "tinted": "./assets/culture-monochrome.png"
       },
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "La app utilitza la teva ubicació per mostrar-la al mapa cultural de Mataró.",
+        "NSLocationWhenInUseUsageDescription": "La app utilitza la teva ubicació per mostrar-la al mapa cultural.",
         "ITSAppUsesNonExemptEncryption": false
       }
     },
@@ -60,7 +60,7 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "La app utilitza la teva ubicació per mostrar-la al mapa cultural de Mataró."
+          "locationWhenInUsePermission": "La app utilitza la teva ubicació per mostrar-la al mapa cultural."
         }
       ],
       [
@@ -105,7 +105,7 @@
             {
               "id": "mapa",
               "title": "Mapa",
-              "subtitle": "Mapa cultural de Mataró",
+              "subtitle": "Mapa cultural",
               "icon": "location",
               "params": {
                 "href": "/(culture)/mapa"

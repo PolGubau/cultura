@@ -3,16 +3,17 @@ import { Alert, FlatList, Linking, ScrollView, Text, TextInput, View } from 'rea
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
-import { eventText, filterEvents, isLive, formatDate, dayKey, type CulturalEvent } from './core';
+import { categoryKey, eventText, filterEvents, isLive, formatDate, dayKey, type CulturalEvent } from './core';
 import { useCulture } from './provider';
 import { Button, Favorite, Status, styles } from './ui';
 import { CultureMap } from './map';
 
 export type CultureView = 'agenda' | 'now' | 'map' | 'favorites' | 'settings';
-const titles: Record<CultureView, string> = { agenda: 'Què fem a Mataró?', now: 'Està passant ara', map: 'La cultura, al mapa', favorites: 'La teva agenda', settings: 'Al teu gust' };
+const titles: Record<CultureView, string> = { agenda: 'Què fem?', now: 'Està passant ara', map: 'La cultura, al mapa', favorites: 'La teva agenda', settings: 'Al teu gust' };
 export function CultureScreen({ view }: { view: CultureView }) {
-  const { data, festival, preferences, setPreferences, now, pending, refresh } = useCulture();
+  const { data, festival, preferences, setPreferences, now, pending, refresh, loadMore } = useCulture();
   const [query, setQuery] = useState('');
+  const [cityQuery, setCityQuery] = useState('');
   const [category, setCategory] = useState('');
   const [day, setDay] = useState('');
   const events = useMemo(() => filterEvents(data?.events ?? [], { festivalId: festival?.id, query, category,
@@ -21,10 +22,11 @@ export function CultureScreen({ view }: { view: CultureView }) {
       (dayKey(event.starts_at, data?.city.timezone) <= day && dayKey(new Date(Date.parse(event.ends_at) - 1), data?.city.timezone) >= day)),
     [data, festival?.id, query, category, preferences, view, now, day]);
   const days = useMemo(() => [...new Set((data?.events ?? []).map((event) => dayKey(event.starts_at, data?.city.timezone)))], [data]);
+  const cities = useMemo(() => (data?.cities ?? []).filter((city) => city.name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase().includes(cityQuery.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase())).slice(0, 20), [data?.cities, cityQuery]);
   if (view === 'map') return <SafeAreaView edges={['top', 'left', 'right']} style={styles.screen}><ScrollView contentContainerStyle={styles.content}><Text accessibilityRole="header" style={styles.title}>{titles.map}</Text><CultureMap /></ScrollView></SafeAreaView>;
   const header = <View style={styles.header}>
-    <Text style={styles.brand}>{festival?.name ?? 'Mataró · Cultura'}</Text>
-    <Text style={styles.meta}>Tot l’any, a prop teu · {data?.city.name ?? 'Mataró'}</Text>
+    <Text style={styles.brand}>{festival?.name ?? 'Agenda cultural'}</Text>
+    <Text style={styles.meta}>Tot l’any, a prop teu · {data?.city.name ?? 'Catalunya'}</Text>
     <Text accessibilityRole="header" style={styles.title}>{titles[view]}</Text>
     <Text style={styles.body}>{festival?.description || 'Música, cultura popular, exposicions i plans per compartir.'}</Text>
     {festival?.logo_url && <Image source={{ uri: festival.logo_url }} style={{ width: 64, height: 64 }} contentFit="contain" accessibilityLabel={`Logo de ${festival.name}`} />}
@@ -33,10 +35,17 @@ export function CultureScreen({ view }: { view: CultureView }) {
     {data?.announcements.filter((item) => (!item.festival_id || item.festival_id === festival?.id) && Date.parse(item.starts_at) <= now.getTime() && Date.parse(item.ends_at) > now.getTime()).map((item) =>
       <View key={item.id} style={styles.notice} accessibilityLiveRegion="polite"><Text style={styles.heading}>{item.title}</Text><Text style={styles.body}>{item.message}</Text></View>)}
     {view !== 'settings' && <>
+      <Text style={styles.heading}>Municipi</Text>
+      <TextInput style={styles.input} placeholderTextColor="#776C6A" accessibilityLabel="Cerca municipi" placeholder="Cerca un municipi" value={cityQuery} onChangeText={setCityQuery} />
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
+        <Button title="Tots els municipis" selected={!data?.selectedCity} disabled={pending} onPress={() => { setCategory(''); void refresh(data?.from, ''); }} />
+        {cities.map((city) => <Button key={city.id} title={city.name} selected={data?.selectedCity === city.id} disabled={pending} onPress={() => { setCategory(''); void refresh(data?.from, city.id); }} />)}
+      </ScrollView>
+      {(data?.cities?.length ?? 0) > 20 && !cityQuery && <Text style={styles.meta}>Escriu el nom per trobar més municipis.</Text>}
       <TextInput style={styles.input} placeholderTextColor="#776C6A" accessibilityLabel="Cerca actes" placeholder="Acte, artista o organització" value={query} onChangeText={setQuery} />
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
         <Button title="Totes" selected={!category} onPress={() => setCategory('')} />
-        {data?.categories.map((item) => <Button key={item.id} title={item.name} selected={category === item.id} onPress={() => setCategory(item.id)} />)}
+        {data?.categories.map((item) => <Button key={categoryKey(item)} title={item.name} selected={category === categoryKey(item)} onPress={() => setCategory(categoryKey(item))} />)}
       </ScrollView>
       {view !== 'now' && <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
         <Button title="Tots els dies" selected={!day} onPress={() => setDay('')} />
@@ -48,7 +57,7 @@ export function CultureScreen({ view }: { view: CultureView }) {
   if (view === 'settings') return <SafeAreaView edges={['top', 'left', 'right']} style={styles.screen}><ScrollView contentContainerStyle={styles.content}>
     {header}
     <View style={styles.card}><Text style={styles.heading}>Ciutat o festa</Text>
-      {[{ id: 'auto', name: 'Automàtic segons les dates' }, { id: 'city', name: 'Tota l’agenda de Mataró' }, ...(data?.festivals ?? [])].map((item) =>
+      {[{ id: 'auto', name: 'Automàtic segons les dates' }, { id: 'city', name: 'Tota l’agenda' }, ...(data?.festivals ?? [])].map((item) =>
         <Button key={item.id} title={item.name} selected={preferences.mode === item.id} onPress={() => setPreferences((previous) => ({ ...previous, mode: item.id }))} />)}
     </View>
     <View style={styles.card}><Text style={styles.heading}>Idioma dels actes</Text>
@@ -80,10 +89,12 @@ export function CultureScreen({ view }: { view: CultureView }) {
       ListHeaderComponent={header} renderItem={({ item }) => <EventCard event={item} />}
       ListEmptyComponent={<View style={styles.card}><Text style={styles.heading}>{view === 'favorites' ? 'Encara no tens actes desats aquí' : pending ? 'Carregant l’agenda…' : 'No hi ha actes per mostrar'}</Text>
         <Text style={styles.body}>Canvia els filtres o consulta un altre període. No mostrem programació de prova.</Text></View>}
-      ListFooterComponent={data && view !== 'now' ? <View style={styles.header}>
-        {data.hasMore && <Text style={styles.meta}>Límit de 1.000 actes. Tria un període posterior per consultar-ne més.</Text>}
-        <View style={styles.row}><Button title="← Període anterior" disabled={pending} onPress={() => { setDay(''); void refresh(shiftDay(data.from, -90)); }} />
+      ListFooterComponent={data ? <View style={styles.header}>
+        {data.nextOffset != null && <><Text style={styles.meta}>Hi ha més actes en aquest període que encara no s’han carregat.</Text><Button title="Carregar més actes" disabled={pending} onPress={() => void loadMore()} /></>}
+        {data.hasMore && data.nextOffset == null && <Text style={styles.meta}>S’ha arribat al límit de consulta. Tria un municipi o una data més concreta.</Text>}
+        {view !== 'now' && <View style={styles.row}><Button title="← Període anterior" disabled={pending} onPress={() => { setDay(''); void refresh(shiftDay(data.from, -90)); }} />
           <Button title="Període següent →" disabled={pending} onPress={() => { setDay(''); void refresh(data.to); }} /></View>
+        }
         <Text style={styles.meta}>{data.from} — {data.to} · Actualitzat: {formatDate(data.fetchedAt, data.city.timezone)}</Text>
       </View> : null} />
   </SafeAreaView>;
@@ -93,12 +104,12 @@ function EventCard({ event }: { event: CulturalEvent }) {
   const { data, preferences, now } = useCulture();
   const text = eventText(event, preferences.locale);
   return <View style={[styles.card, event.status === 'cancelled' && { borderStyle: 'dashed' }]}>
-    <View style={styles.between}><Text style={styles.meta}>{data?.categories.find((category) => category.id === event.category_id)?.name}{isLive(event, now) ? ' · Ara' : event.format === 'exhibition' ? ' · Exposició' : ''}</Text><Favorite id={event.id} /></View>
+    <View style={styles.between}><Text style={styles.meta}>{data?.categories.find((category) => category.id === event.category_id && (!category.city_id || category.city_id === event.city_id))?.name}{isLive(event, now) ? ' · Ara' : event.format === 'exhibition' ? ' · Exposició' : ''}</Text><Favorite id={event.id} /></View>
     <Text style={styles.heading} accessibilityRole="link" onPress={() => router.push(`/actes/${event.id}`)}>{text.title}</Text>
     {event.status === 'cancelled' && <Text style={styles.heading}>Cancel·lat · {event.cancellation_reason}</Text>}
     <Text style={styles.meta}>{formatDate(event.starts_at, data!.city.timezone, preferences.locale)}{event.format === 'exhibition' ? ` — ${formatDate(event.ends_at, data!.city.timezone, preferences.locale)}` : ''}</Text>
     <Text style={styles.body}>{text.summary}</Text>
-    <Text style={styles.meta}>{data?.places.find((place) => place.id === event.place_id)?.name}{event.price ? ` · ${event.price}` : ''}</Text>
+    <Text style={styles.meta}>{data?.places.find((place) => place.id === event.place_id)?.name}{data?.cities?.find((city) => city.id === event.city_id)?.name ? ` · ${data.cities.find((city) => city.id === event.city_id)!.name}` : ''}{event.price ? ` · ${event.price}` : ''}</Text>
     <Button title="Veure acte" onPress={() => router.push(`/actes/${event.id}`)} />
   </View>;
 }
